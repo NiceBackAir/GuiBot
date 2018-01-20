@@ -10,8 +10,17 @@ public class GuiBot extends DefaultBWListener {
 
     private Player self;
 
-    private int supplydepot_x = 0;
-    private int supplydepot_y = 0;
+    private int nextBuildingX = 0;
+    private int nextBuildingY = 0;
+    
+    public static final int PIXELS_PER_TILE = 32;
+    public static final float SECONDS_PER_FRAME = 0.042f;
+    
+    private float mineralsPerFrame = 0f;
+    private float gasPerFrame = 0f;
+    
+    private int reservedMinerals = 0;
+    private int reservedGas = 0;
     
     public void run() {
         mirror.getModule().setEventListener(this);
@@ -46,9 +55,10 @@ public class GuiBot extends DefaultBWListener {
         
         //player control enable
         game.enableFlag(1);
+        game.setLocalSpeed(1);
         
-        supplydepot_x = self.getStartLocation().getX();
-        supplydepot_y = self.getStartLocation().getY() + 3;
+        nextBuildingX = self.getStartLocation().getX();
+        nextBuildingY = self.getStartLocation().getY() + 5;
     }
 
     @Override
@@ -56,29 +66,53 @@ public class GuiBot extends DefaultBWListener {
         //game.setTextSize(10);
         game.drawTextScreen(10, 10, "Playing as " + self.getName() + " - " + self.getRace());
 
+        countUnits();
+        
+        for (Unit myUnit : self.getUnits()) {
+            //if there's enough minerals, train a probe
+            if (myUnit.getType() == UnitType.Protoss_Nexus) {
+            	if(myUnit.isTraining()) {
+            		//make sure there will be enough money to build the next probe
+            		reservedMinerals = (int) Math.max(0, UnitType.Protoss_Probe.mineralPrice() - myUnit.getRemainingTrainTime() * mineralsPerFrame);
+            		game.drawTextScreen(250, 0, "Reserved Minerals: " + reservedMinerals);
+            	} else if(self.minerals() >= 50) {
+            		myUnit.train(UnitType.Protoss_Probe);
+            	}
+            }
+        }
+        
+        gather();
+        
+        buildBuildings();
+    }
+    
+    public void countUnits() {
         StringBuilder units = new StringBuilder("My units:\n");
-
+        
+        mineralsPerFrame = 0;
+        gasPerFrame = 0;
         //iterate through my units
         for (Unit myUnit : self.getUnits()) {
             units.append(myUnit.getType()).append(" ").append(myUnit.getTilePosition()).append("\n");
+            if (myUnit.getType().isWorker()) {
+            	if (myUnit.isGatheringMinerals()) {
+            		mineralsPerFrame += 0.0474;   
+            	} else if (myUnit.isGatheringGas()) {
+            		gasPerFrame += 0.072;
+            	}
+            } 
+        }
+        game.drawTextScreen(250, 15, "Minerals Per Frame: " + mineralsPerFrame);
+        
+        //draw my units on screen
+        game.drawTextScreen(10, 25, units.toString());
+    }
 
-            //if there's enough minerals, train a probe
-            if (myUnit.getType() == UnitType.Protoss_Nexus && self.minerals() >= 50 && !myUnit.isTraining()) {
-                myUnit.train(UnitType.Protoss_Probe);
-            }
-            
-            if (myUnit.getType().isWorker() && self.minerals() >= 100) {
-            	TilePosition temp = new TilePosition(supplydepot_x,supplydepot_y);
-            	int tries = 0;
-            	while(!game.canBuildHere(temp, UnitType.Protoss_Pylon, myUnit) && tries < 2) {
-            		units.append(supplydepot_x + "\n");
-            		supplydepot_x = self.getStartLocation().getX() + 2;
-            		temp = new TilePosition(supplydepot_x,supplydepot_y);           
-            		tries ++;		
-            	}  
-            	myUnit.build(UnitType.Protoss_Pylon, temp);
-            }
-
+    public void trainAndResearch () {
+    	
+    }
+    public void gather() {
+    	for (Unit myUnit : self.getUnits()) {
             //if it's a worker and it's idle, send it to the closest mineral patch
             if (myUnit.getType().isWorker() && myUnit.isIdle()) {
                 Unit closestMineral = null;
@@ -98,11 +132,44 @@ public class GuiBot extends DefaultBWListener {
                 }
             }
         }
-
-        //draw my units on screen
-        game.drawTextScreen(10, 25, units.toString());
     }
-
+    
+    //build a pylon at the optimal time
+    public void buildBuildings() {
+    	TilePosition buildingLoc = new TilePosition(nextBuildingX,nextBuildingY);
+    	int tries = 0;
+    	while(!game.canBuildHere(buildingLoc, UnitType.Protoss_Pylon) && tries < 7) {
+    		nextBuildingX += 2;
+    		buildingLoc = new TilePosition(nextBuildingX,nextBuildingY);           
+    		tries ++;		
+    	}  
+    	int shortestDist = 999;
+    	Unit closestWorker = null;
+    	for (Unit myUnit : self.getUnits()) {
+            //build buildings at the optimal time
+            if (myUnit.getType().isWorker()) {
+            	int dist = myUnit.getDistance(buildingLoc.toPosition());
+            	if (dist < shortestDist) {
+            		closestWorker = myUnit;
+            	}
+            }
+        }
+    	   	
+    	int mineralsWhileMoving = (int) (timeToMove(UnitType.Protoss_Probe, shortestDist) * mineralsPerFrame);
+    	
+    	if (self.minerals() >= 100 + reservedMinerals - mineralsWhileMoving)
+    		closestWorker.build(UnitType.Protoss_Pylon, buildingLoc);
+    }
+    
+    /*solve the quadratic formula to determine time in frames needed to travel a distance d with a unit
+    	given its acceleration a and top speed v. All distances are in pixels
+    */
+    public static int timeToMove(UnitType u, float d) {
+    	float a = u.acceleration();
+    	double v = u.topSpeed();
+    	return (int)((-v + Math.sqrt(v*v + 2*a*d))/a);
+    }
+    
     public static void main(String[] args) {
         new GuiBot().run();
     }
