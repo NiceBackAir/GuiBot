@@ -301,9 +301,6 @@ public class GuiBot extends DefaultBWListener {
     public void gather() {
     	for (Unit myUnit : self.getUnits()) {
             //if it's a worker and it's idle, send it to the closest mineral patch
-    		if(myUnit.isCompleted() && myUnit.getType() == UnitType.Protoss_Probe) {
-    			game.drawTextMap(myUnit.getPosition(), "builder: " + myUnit.isIdle());
-    		}
             if (myUnit.isCompleted() && myUnit.getType() == UnitType.Protoss_Probe && myUnit.isIdle()) {            	
                 gatherMinerals(myUnit);
             }
@@ -322,7 +319,7 @@ public class GuiBot extends DefaultBWListener {
 	        				gatherMinerals(u);
 	        				gasCount--;
 	        			}
-	        		} else if (gasCount < gasCap && (u.isGatheringMinerals() || u.isIdle())) {	        			
+	        		} else if (gasCount < gasCap && (u.isGatheringMinerals() && !u.isCarryingMinerals() || u.isIdle())) {	        			
 	        			u.gather(myUnit, false);
 	        			gasCount++;
 	        		}
