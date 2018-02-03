@@ -1,5 +1,4 @@
-import java.util.Arrays;
-
+import bwapi.Color;
 import bwapi.DefaultBWListener;
 import bwapi.Game;
 import bwapi.Mirror;
@@ -8,11 +7,10 @@ import bwapi.Position;
 import bwapi.TilePosition;
 import bwapi.Unit;
 import bwapi.UnitCommand;
-import bwapi.UnitCommandType;
 import bwapi.UnitType;
 import bwapi.UpgradeType;
 import bwta.BWTA;
-import bwta.BaseLocation;
+import bwta.*;
 
 public class GuiBot extends DefaultBWListener {
 
@@ -123,14 +121,13 @@ public class GuiBot extends DefaultBWListener {
         
         BOChecklist = new boolean[selectedBO.length];
         
-        nextItemX = self.getStartLocation().getX();
-        nextItemY = self.getStartLocation().getY() + 4;
+        //nextItemX = self.getStartLocation().getX();
+        //nextItemY = self.getStartLocation().getY() + 4;
     }
 
     @Override
     public void onFrame() {
         //game.setTextSize(10);
-        game.drawTextScreen(10, 10, "Playing as " + self.getName() + " - " + self.getRace());
         
         //Clear BO completion.
         //when a unit is built, it stays complete on the BO even if it dies
@@ -180,13 +177,13 @@ public class GuiBot extends DefaultBWListener {
         
 
         if (nextItem.isBuilding()) {
+            updateBuildingMap(nextItem);
         	buildBuilding(nextItem, nextItemX, nextItemY);   
         }
 	        		
         BOProgress = Math.max(0, i-1);
         game.drawTextScreen(250, 30, "Next Item: " + BOProgress + " " + nextItem.toString());
-    }
-    
+    }    
     /** Keeps track of your own units, income, and BO completion progress
      * 
      */
@@ -329,11 +326,23 @@ public class GuiBot extends DefaultBWListener {
     }
     public void gatherMinerals(Unit myUnit) {
     	Unit closestMineral = null;
-
+    	
+    	Unit closestBase = null;
+    	for (Unit u: self.getUnits()) {
+    		if(u.getType() == UnitType.Protoss_Nexus && u.isCompleted()) {
+    			if(closestBase == null || myUnit.getDistance(u) < myUnit.getDistance(closestBase)) {
+    				closestBase = u;
+    			}
+    		}
+    	}
+    	
+    	Position closestBaseCenter = new Position(closestBase.getX() + 2*32, closestBase.getY() + (int) 1.5*32);
+    	
         //find the closest mineral
         for (Unit neutralUnit : game.neutral().getUnits()) {
             if (neutralUnit.getType().isMineralField()) {
-                if (closestMineral == null || myUnit.getDistance(neutralUnit) < myUnit.getDistance(closestMineral)) {
+                if (closestMineral == null || (closestBaseCenter.getDistance(neutralUnit) < closestBaseCenter.getDistance(closestMineral)
+                	&& !neutralUnit.isBeingGathered())) {
                     closestMineral = neutralUnit;
                 }
             }
@@ -345,18 +354,59 @@ public class GuiBot extends DefaultBWListener {
         }
     }
     
+    /** Decide where the next buildings should go
+     * 
+     */
+    public void updateBuildingMap(UnitType nextItem) {
+    	Position myBase = new Position(self.getStartLocation().toPosition().getX() + 2*32,
+    								self.getStartLocation().toPosition().getY() + (int) 1.5*32);
+    	TilePosition baseTile = self.getStartLocation();
+    	Position closestChoke = BWTA.getNearestChokepoint(myBase).getCenter();
+    	TilePosition nextTile = null;
+    	double closestDistance = 99999;
+    	double d;
+    	if(nextItem == UnitType.Protoss_Pylon) {
+	    	for(int x = baseTile.getX() - 2; x <= baseTile.getX() + 4; x +=2) {
+	        	for(int y = baseTile.getY() - 2; y <= baseTile.getY() + 4; y +=2) {	  
+	        		nextTile = new TilePosition(x,y);
+	        		d = BWTA.getGroundDistance(nextTile, closestChoke.toTilePosition());
+	        		if(game.canBuildHere(nextTile, nextItem) && d < closestDistance) {
+	        			nextItemX = x;
+	        			nextItemY = y;
+	        			closestDistance = d;
+	        			
+	        		}
+	        	}
+	    	}
+    	} else {
+	    	for(int x = baseTile.getX() - 6; x <= baseTile.getX() + 8; x +=4) {
+	        	for(int y = baseTile.getY() - 6; y <= baseTile.getY() + 8; y +=3) {	        		
+	        		nextTile = new TilePosition(x,y);
+	        		d = BWTA.getGroundDistance(nextTile, closestChoke.toTilePosition());
+	        		if(game.canBuildHere(nextTile, nextItem) && d < closestDistance) {
+	        			nextItemX = x;
+	        			nextItemY = y;
+	        			closestDistance = d;	        			
+	        		}
+	        	}
+	    	}
+    	}
+    	game.drawBoxMap(nextItemX*32, nextItemY*32, (nextItemX+nextItem.tileWidth())*32, (nextItemY+nextItem.tileHeight())*32, new Color(0,255,255));
+    }
+    
     /**build a pylon at the optimal time
      * returns true if build command was issued, else returns false 
     */
     public boolean buildBuilding(UnitType building, int x, int y) {   
     	//decide where to put the building    	
     	TilePosition buildingLoc = new TilePosition(x,y);
+    	TilePosition baseLocation = self.getStartLocation();
     	if (building == UnitType.Protoss_Assimilator) {
     		TilePosition closestGas = null;
             for (Unit neutralUnit : game.neutral().getUnits()) {            	
                 if (neutralUnit.getType() == UnitType.Resource_Vespene_Geyser) {
-                	if (game.canBuildHere(neutralUnit.getTilePosition(), building) && (closestGas == null || self.getStartLocation().getDistance(neutralUnit.getTilePosition())
-                			< self.getStartLocation().getDistance(closestGas))) {
+                	if (game.canBuildHere(neutralUnit.getTilePosition(), building) && (closestGas == null || baseLocation.getDistance(neutralUnit.getTilePosition())
+                			< baseLocation.getDistance(closestGas))) {
                 		closestGas = neutralUnit.getTilePosition();
                 	}
                 }
@@ -364,30 +414,31 @@ public class GuiBot extends DefaultBWListener {
             buildingLoc = closestGas;
     	} else if (building == UnitType.Protoss_Nexus) {    		
     		TilePosition closestBase = null;
+    		Chokepoint closestChoke = BWTA.getNearestChokepoint(baseLocation);
             for (BaseLocation b : BWTA.getBaseLocations()) {  
             	TilePosition t = b.getTilePosition();
-        		if (!t.equals(self.getStartLocation()) &&(closestBase == null || self.getStartLocation().getDistance(t)
-            			< self.getStartLocation().getDistance(closestBase))) {
+        		if (!t.equals(baseLocation) &&(closestBase == null || closestChoke.getDistance(t.toPosition())
+            			< closestChoke.getDistance(closestBase.toPosition()))) {
             		closestBase = t;
             	}
             }    
             buildingLoc = closestBase;
     	} else if (building == UnitType.Protoss_Pylon) {
-	    	int tries = 0;
-	    	while(!game.canBuildHere(buildingLoc, building) && tries < 10) {
-	    		x+=6;
+	    	//int tries = 0;
+	    	//while(!game.canBuildHere(buildingLoc, building) && tries < 10) {
+	    		//x+=6;
 	    		buildingLoc = new TilePosition(x,y);           
-	    		tries++;		
-	    	}
+	    	//	tries++;		
+	    	//}
     	} else {
-	    	int tries = 0;
-	    	y+=2;
+	    	//int tries = 0;
+	    	//y+=2;
 	    	buildingLoc = new TilePosition(x,y);
-	    	while(!game.canBuildHere(buildingLoc, building) && tries < 20) {
-	    		x++;
-	    		buildingLoc = new TilePosition(x,y);           
-	    		tries++;		
-	    	}  
+	    	//while(!game.canBuildHere(buildingLoc, building) && tries < 20) {
+	    		//x++;
+	    	//	buildingLoc = new TilePosition(x,y);           
+	    	//	tries++;		
+	    	//}  
     	}
     	
     	//find the worker to build with
