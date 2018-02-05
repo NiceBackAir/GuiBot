@@ -450,14 +450,8 @@ public class GuiBot extends DefaultBWListener {
     					myUnit.move(self.getStartLocation().toPosition());
     				} else if(!myUnit.isAttacking() && myUnit.getGroundWeaponCooldown() <=1) {
     					game.drawTextMap(myUnit.getPosition(), myUnit.getGroundWeaponCooldown()+"");
-		    			if(myUnit.isInWeaponRange(closestEnemy) && (!closestEnemy.isInWeaponRange(myUnit) || !closestEnemy.getType().canAttack())) {
-		    				//if(closestEnemy.isInWeaponRange(myUnit)) {//myUnit.getDistance(closestEnemy) < game.enemy().weaponMaxRange(closestEnemy.getType().groundWeapon()) + closestEnemy.getType().topSpeed()*(9-8)) {
-		    					//game.sendText("rawr");
-		    					//myUnit.move(self.getStartLocation().toPosition());
-		    				//} else {		    					
-		    				myUnit.attack(closestEnemy);
-		    				//myUnit.holdPosition();
-		    				//}	    					
+		    			if(myUnit.isInWeaponRange(closestEnemy) && (!closestEnemy.isInWeaponRange(myUnit) || !closestEnemy.getType().canAttack())) {   					
+		    				myUnit.attack(closestEnemy);   					
 		    			}
     				}
     			} else if(myUnit.isUnderAttack()) {
