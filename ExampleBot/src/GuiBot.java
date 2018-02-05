@@ -9,6 +9,7 @@ import bwapi.Unit;
 import bwapi.UnitCommand;
 import bwapi.UnitType;
 import bwapi.UpgradeType;
+import bwapi.WeaponType;
 import bwta.BWTA;
 import bwta.*;
 
@@ -20,29 +21,32 @@ public class GuiBot extends DefaultBWListener {
 
     private Player self;
 
-    private UnitType nextItem = null;
-    private int nextItemX = 0;
-    private int nextItemY = 0;
+    private UnitType nextItem;
+    private int nextItemX;
+    private int nextItemY;
     
     public static final int PIXELS_PER_TILE = 32;
     public static final float SECONDS_PER_FRAME = 0.042f;
     
-    private float mineralsPerFrame = 0f;
-    private float gasPerFrame = 0f;
+    private float mineralsPerFrame;
+    private float gasPerFrame;
     
-    private int reservedMinerals = 0;
-    private int reservedGas = 0;
+    private int reservedMinerals;
+    private int reservedGas;
     
     //21 Nexus build
     private UnitType[] PvTBO;
-    private UnitType[] selectedBO = PvTBO; 
+    private UnitType[] selectedBO; 
     private boolean[] BOChecklist;
-    private UnitType saveFor = null;
-    private int saveForIndex = 0;
-    private int BOProgress = 0;
-    private int pullGas = 0;
-    private int resumeGas = 0;
-    private int gasCap = 3;
+    private UnitType saveFor;
+    private int saveForIndex;
+    private int BOProgress;
+    private int pullGas;
+    private int resumeGas;
+    private int gasCap;
+    
+    private Unit scoutingProbe;
+    private TilePosition enemyMain;
     
     public void run() {
         mirror.getModule().setEventListener(this);
@@ -52,6 +56,7 @@ public class GuiBot extends DefaultBWListener {
     @Override
     public void onUnitCreate(Unit unit) {
         //System.out.println("New unit discovered " + unit.getType());
+    	//Advance the BO if a unit is created
     	if (!unit.getType().isBuilding() && !unit.getType().isWorker()) {
         	int i = 0;
         	boolean match = false;
@@ -63,7 +68,15 @@ public class GuiBot extends DefaultBWListener {
         		i++;
         	}
         	BOProgress = Math.max(0,i-1);
-        }
+        } else if (unit.getType() == UnitType.Protoss_Pylon && BOProgress == 1) {
+    		Unit p = null;
+    		for(Unit u: self.getUnits()) {
+    			if(u.getType() == UnitType.Protoss_Probe && (p == null || u.getDistance(unit.getPosition()) < p.getDistance(unit.getPosition()))) {
+    				p = u;
+    			}
+    		}
+    		scoutingProbe = p;
+    	}
     }
     
     @Override
@@ -74,7 +87,7 @@ public class GuiBot extends DefaultBWListener {
     }
     
     @Override
-    public void onStart() {
+    public void onStart() {    	
         game = mirror.getGame();
         self = game.self();
 
@@ -84,6 +97,23 @@ public class GuiBot extends DefaultBWListener {
         BWTA.readMap();
         BWTA.analyze();
         System.out.println("Map data ready");
+        
+        //initialize everything
+        nextItem = null;
+        nextItemX = 0;
+        nextItemY = 0;
+        
+        selectedBO = PvTBO; 
+        saveFor = null;
+        saveForIndex = 0;
+        BOProgress = 0;
+        pullGas = 0;
+        resumeGas = 0;
+        gasCap = 3;
+        
+        scoutingProbe = null;
+        enemyMain = null;
+        
         
         int i = 0;
         for(BaseLocation baseLocation : BWTA.getBaseLocations()){
@@ -175,6 +205,11 @@ public class GuiBot extends DefaultBWListener {
         trainAndResearch();        
         gather();        
         
+        if(scoutingProbe != null) {
+        	probeScout();
+        }
+        
+        controlArmy();
 
         if (nextItem.isBuilding()) {
             updateBuildingMap(nextItem);
@@ -200,6 +235,9 @@ public class GuiBot extends DefaultBWListener {
             	} else if (myUnit.isGatheringGas()) {
             		gasPerFrame += 0.072;
             	}
+            	if(myUnit.getTarget() !=null) {
+            		game.drawTextMap(myUnit.getPosition(), myUnit.getTarget().getType().toString());
+            	}
             } else if(myUnit.getType().isBuilding()) {
             	boolean match = false;
             	int i = 0;
@@ -209,6 +247,10 @@ public class GuiBot extends DefaultBWListener {
             			match = true;
             		}
             		i++;
+            	}
+            } else {
+            	if(myUnit.getTarget() !=null) {
+            		game.drawTextMap(myUnit.getPosition(), myUnit.getTarget().getType().toString());
             	}
             }
         }
@@ -231,6 +273,18 @@ public class GuiBot extends DefaultBWListener {
         
         //draw my units on screen
         //game.drawTextScreen(10, 25, units.toString());
+        
+        //now for enemy units
+        for (Unit myUnit: game.enemy().getUnits()) {
+        	//for some reason, the game remembers enemy positions from past games, so gotta check if explored
+        	if (game.isExplored(myUnit.getTilePosition()) && myUnit.getType() == UnitType.Terran_Command_Center) {
+        		for(TilePosition t: game.getStartLocations()) {
+        			if(t.equals(myUnit.getTilePosition())) {
+        				enemyMain = myUnit.getTilePosition();        				
+        			}
+        		}
+        	}
+        }
     }
     
     /** Train units and research tech and upgrades
@@ -297,7 +351,7 @@ public class GuiBot extends DefaultBWListener {
      */
     public void gather() {
     	for (Unit myUnit : self.getUnits()) {
-            //if it's a worker and it's idle, send it to the closest mineral patch
+            //if it's a worker and it's idle or just returned minerals, send it to the best mineral patch
             if (myUnit.isCompleted() && myUnit.getType() == UnitType.Protoss_Probe && myUnit.isIdle()) {            	
                 gatherMinerals(myUnit);
             }
@@ -336,7 +390,7 @@ public class GuiBot extends DefaultBWListener {
     		}
     	}
     	
-    	Position closestBaseCenter = new Position(closestBase.getX() + 2*32, closestBase.getY() + (int) 1.5*32);
+    	Position closestBaseCenter = new Position(closestBase.getX() + 2*PIXELS_PER_TILE, closestBase.getY() + (int) 1.5*PIXELS_PER_TILE);
     	
         //find the closest mineral
         for (Unit neutralUnit : game.neutral().getUnits()) {
@@ -354,12 +408,75 @@ public class GuiBot extends DefaultBWListener {
         }
     }
     
+    /** Find the enemy main and scout with probe
+     * 
+     */
+    public void probeScout() {
+    	game.drawTextMap(scoutingProbe.getPosition(), "Bisu Probe");
+    	if(enemyMain == null) {
+	    	TilePosition farthestMain = null;
+	    	for(TilePosition t: game.getStartLocations()) {
+	    		if(!game.isExplored(t) && (farthestMain == null || t.getDistance(self.getStartLocation()) < farthestMain.getDistance(self.getStartLocation()))) {
+	    			farthestMain = t;
+	    		}
+	    	}
+	    	scoutingProbe.move(farthestMain.toPosition());
+    	} else {
+    		game.sendText(enemyMain.toString());
+    		//if there's nothing else to do, go intangible
+    		gatherMinerals(scoutingProbe);
+    		scoutingProbe = null;
+    	}
+    }
+    
+    /** Micro army to optimize army value and gather at certain locations
+     * 
+     */
+    public void controlArmy() {
+    	Unit closestEnemy = null;
+    	for(Unit myUnit:self.getUnits()) {
+    		if(myUnit.getType() == UnitType.Protoss_Dragoon && myUnit.isCompleted()) {    	    			
+    			for(Unit hisUnit: myUnit.getUnitsInRadius(myUnit.getType().sightRange())) {    				
+    				if(hisUnit.getPlayer().equals(game.enemy())) {
+    					if((closestEnemy == null ||	myUnit.getDistance(hisUnit.getPosition()) < myUnit.getDistance(closestEnemy.getPosition()))) {    					
+    						closestEnemy = hisUnit;
+    					}
+    				}    				
+    			}				
+
+    			if(closestEnemy != null) {    				
+    				//don't interrupt your attack unless you're being damaged
+    				if(myUnit.isAttacking() && !myUnit.isStartingAttack() && !myUnit.isAttackFrame()) {
+    					myUnit.move(self.getStartLocation().toPosition());
+    				} else if(!myUnit.isAttacking() && myUnit.getGroundWeaponCooldown() <=1) {
+    					game.drawTextMap(myUnit.getPosition(), myUnit.getGroundWeaponCooldown()+"");
+		    			if(myUnit.isInWeaponRange(closestEnemy) && (!closestEnemy.isInWeaponRange(myUnit) || !closestEnemy.getType().canAttack())) {
+		    				//if(closestEnemy.isInWeaponRange(myUnit)) {//myUnit.getDistance(closestEnemy) < game.enemy().weaponMaxRange(closestEnemy.getType().groundWeapon()) + closestEnemy.getType().topSpeed()*(9-8)) {
+		    					//game.sendText("rawr");
+		    					//myUnit.move(self.getStartLocation().toPosition());
+		    				//} else {		    					
+		    				myUnit.attack(closestEnemy);
+		    				//myUnit.holdPosition();
+		    				//}	    					
+		    			}
+    				}
+    			} else if(myUnit.isUnderAttack()) {
+    				myUnit.move(self.getStartLocation().toPosition());
+    			} else {
+    				if(enemyMain != null) {
+    					myUnit.attack(enemyMain.toPosition());
+    				}
+    			}
+    		}
+    	}
+    }
+    
     /** Decide where the next buildings should go
      * 
      */
     public void updateBuildingMap(UnitType nextItem) {
-    	Position myBase = new Position(self.getStartLocation().toPosition().getX() + 2*32,
-    								self.getStartLocation().toPosition().getY() + (int) 1.5*32);
+    	Position myBase = new Position(self.getStartLocation().toPosition().getX() + 2*PIXELS_PER_TILE,
+    								self.getStartLocation().toPosition().getY() + (int) 1.5*PIXELS_PER_TILE);
     	TilePosition baseTile = self.getStartLocation();
     	Position closestChoke = BWTA.getNearestChokepoint(myBase).getCenter();
     	TilePosition nextTile = null;
@@ -391,7 +508,7 @@ public class GuiBot extends DefaultBWListener {
 	        	}
 	    	}
     	}
-    	game.drawBoxMap(nextItemX*32, nextItemY*32, (nextItemX+nextItem.tileWidth())*32, (nextItemY+nextItem.tileHeight())*32, new Color(0,255,255));
+    	game.drawBoxMap(nextItemX*PIXELS_PER_TILE, nextItemY*PIXELS_PER_TILE, (nextItemX+nextItem.tileWidth())*PIXELS_PER_TILE, (nextItemY+nextItem.tileHeight())*PIXELS_PER_TILE, new Color(0,255,255));
     }
     
     /**build a pylon at the optimal time
