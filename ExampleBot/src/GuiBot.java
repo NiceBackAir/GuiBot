@@ -190,6 +190,7 @@ public class GuiBot extends DefaultBWListener {
         	i++;
         }
         
+        //true if initial BO is complete
         if(keepChecking) {
         	BOProgress = i;
         	nextItem = null;
@@ -202,7 +203,13 @@ public class GuiBot extends DefaultBWListener {
         	gasCap = 3;
         }
         
-        trainAndResearch();        
+        trainAndResearch();     
+        
+        //true if initial BO is complete
+        if(keepChecking) {
+        	nextItem = transition();
+        }
+        
         gather();        
         
         if(scoutingProbe != null) {
@@ -325,7 +332,8 @@ public class GuiBot extends DefaultBWListener {
         for (Unit myUnit : self.getUnits()) {
             if (myUnit.getType() == UnitType.Protoss_Gateway) {
 	            if(myUnit.canTrain(UnitType.Protoss_Dragoon) && myUnit.isCompleted() 
-	            	&& BOProgress < selectedBO.length && selectedBO[BOProgress] == UnitType.Protoss_Dragoon) {
+	            	&& (BOProgress < selectedBO.length && selectedBO[BOProgress] == UnitType.Protoss_Dragoon
+	            	|| BOProgress >= selectedBO.length)) {
 	            	if(myUnit.isTraining()) {
 	            		//make sure there will be enough money to build the next probe       		
 	            		reservedMinerals += (int) Math.max(0, UnitType.Protoss_Dragoon.mineralPrice() 
@@ -344,6 +352,19 @@ public class GuiBot extends DefaultBWListener {
         }
         game.drawTextScreen(250, 0, "Reserved Minerals: " + reservedMinerals);
         game.drawTextScreen(250, 15, "Reserved Gas: " + reservedGas);
+    }
+    
+    /** Decide how to spend resources after finishing initial BO. 
+     * It doesn't matter whether you can afford the next building, as it will just maintain priority until you can.
+     */
+    public UnitType transition() {
+    	UnitType nextBuilding = null;
+    	if(self.supplyTotal() - self.supplyUsed() <= 8) {
+    		nextBuilding = UnitType.Protoss_Pylon;
+    	} else {
+    		nextBuilding = UnitType.Protoss_Gateway;    		
+    	}
+    	return nextBuilding;
     }
     
     /** Tell workers when/where to gather
@@ -446,13 +467,15 @@ public class GuiBot extends DefaultBWListener {
 
     			if(closestEnemy != null) {    				
     				//don't interrupt your attack unless you're being damaged
-    				if(myUnit.isAttacking() && !myUnit.isStartingAttack() && !myUnit.isAttackFrame()) {
+    				if(myUnit.isAttacking() && !myUnit.isStartingAttack() && !myUnit.isAttackFrame() && myUnit.isUnderAttack()) {
     					myUnit.move(self.getStartLocation().toPosition());
     				} else if(!myUnit.isAttacking() && myUnit.getGroundWeaponCooldown() <=1) {
-    					game.drawTextMap(myUnit.getPosition(), myUnit.getGroundWeaponCooldown()+"");
-		    			if(myUnit.isInWeaponRange(closestEnemy) && (!closestEnemy.isInWeaponRange(myUnit) || !closestEnemy.getType().canAttack())) {   					
+		    			if(myUnit.isInWeaponRange(closestEnemy) && closestEnemy.canAttack(myUnit)) {   		
+		    				
 		    				myUnit.attack(closestEnemy);   					
 		    			}
+    				} else if(closestEnemy.canAttack(myUnit)){
+    					myUnit.move(self.getStartLocation().toPosition());
     				}
     			} else if(myUnit.isUnderAttack()) {
     				myUnit.move(self.getStartLocation().toPosition());
