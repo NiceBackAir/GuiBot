@@ -335,27 +335,51 @@ public class GuiBot extends DefaultBWListener {
         //game.drawTextScreen(250, 15, "Minerals Per Frame: " + mineralsPerFrame);
         
         //draw my units on screen
-        
         attackPosition = null;
         //now for enemy units
         for (Unit hisUnit: game.enemy().getUnits()) {
-        	//for some reason, the game remembers enemy positions from past games, so gotta check if explored
-        	if (game.isExplored(hisUnit.getTilePosition()) && hisUnit.getType().isResourceDepot()) {
-        		for(TilePosition t: game.getStartLocations()) {
-        			if(t.equals(hisUnit.getTilePosition())) {
-        				enemyMain = hisUnit.getTilePosition();        				
-        			}
-        		}
-        	}
-        	if (enemyMain == null && hisUnit.getType().isBuilding()) {
-        		enemyMain = hisUnit.getTilePosition();
-        	}
-        	if(attackPosition == null || hisUnit.getDistance(self.getStartLocation().toPosition()) 
-        		< attackPosition.getDistance(self.getStartLocation().toPosition())) {
-        		
-        		attackPosition = hisUnit.getPosition();
+        	if(hisUnit.isVisible()) {
+	        	//for some reason, the game remembers enemy positions from past games, so gotta check if explored
+	        	if (game.isExplored(hisUnit.getTilePosition()) && hisUnit.getType().isResourceDepot()) {
+	        		for(TilePosition t: game.getStartLocations()) {
+	        			if(t.equals(hisUnit.getTilePosition())) {
+	        				enemyMain = hisUnit.getTilePosition();        				
+	        			}
+	        		}
+	        	}
+	        	if (enemyMain == null && hisUnit.getType().isBuilding()) {
+	        		enemyMain = hisUnit.getTilePosition();
+	        	}
+	        	if(attackPosition == null || hisUnit.getDistance(self.getStartLocation().toPosition()) 
+	        		< attackPosition.getDistance(self.getStartLocation().toPosition()) && hisUnit.getType() != UnitType.Zerg_Overlord
+	        		&& hisUnit.getType() != UnitType.Zerg_Larva && hisUnit.getType() != UnitType.Zerg_Egg
+	        		&& (!hisUnit.getType().isBuilding() || hisUnit.getType().canAttack() || hisUnit.getType() == UnitType.Terran_Bunker)) {
+	        		
+	        		attackPosition = hisUnit.getPosition();
+	        	}
         	}
         }
+        if(attackPosition == null) {
+        	//if no units to attack, go for buildings
+	        for(Unit hisUnit: game.enemy().getUnits()) {
+	        	if(hisUnit.isVisible() && (attackPosition == null || hisUnit.getDistance(self.getStartLocation().toPosition()) 
+	        		< attackPosition.getDistance(self.getStartLocation().toPosition()))) {
+	        		
+	        		attackPosition = hisUnit.getPosition();
+	        	}
+	        }   
+        }
+    	if(attackPosition == null) {
+    		//if no buildings to attack, go to default main
+    		if(enemyMain != null) {
+	    		attackPosition = enemyMain.toPosition();
+    		} else {
+    	    	attackPosition = BWTA.getNearestChokepoint(self.getStartLocation().toPosition()).getCenter();
+    		}
+    	}
+    	
+    	if(enemyMain != null)
+    		game.drawTextMap(enemyMain.toPosition(), "I see you!");
     }
     
     /** Train units and research tech and upgrades. The buildings are sorted by priority order.
@@ -648,8 +672,8 @@ public class GuiBot extends DefaultBWListener {
     	}    	
     	
     	int lowestSaturation = 999;
-    	int saturation;
-    	boolean hasBase;
+    	int saturation = 0;
+    	boolean hasBase = false;
         //find the closest mineral    	
         for (Unit neutralUnit : game.neutral().getUnits()) {
             if (neutralUnit.getType().isMineralField()) {            	
@@ -670,19 +694,23 @@ public class GuiBot extends DefaultBWListener {
             	}
             	//game.drawTextMap(neutralUnit.getPosition(), saturation+"");
             	if(hasBase) {
-            		if(saturation < lowestSaturation -1) {
+            		if(saturation == 0 && lowestSaturation >= 2) {
+            			//maynarding only
             			lowestSaturation = saturation;
             			closestMineral = neutralUnit;
             		} else if(saturation < lowestSaturation && myUnit.getDistance(neutralUnit) < 10*PIXELS_PER_TILE) {
+            			lowestSaturation = saturation;
             			closestMineral = neutralUnit;             			
             		} else if(saturation < lowestSaturation+1 
-            			&& myUnit.getDistance(neutralUnit) < 10*PIXELS_PER_TILE + myUnit.getDistance(closestMineral)) {
+            			&& (closestMineral == null || myUnit.getDistance(neutralUnit) + 10*PIXELS_PER_TILE
+            			< myUnit.getDistance(closestMineral))) {
             			
-            			closestMineral = neutralUnit; 
-            			
+            			lowestSaturation = saturation;
+            			closestMineral = neutralUnit;            			
             		} else if(saturation <= lowestSaturation
             			&& (closestMineral == null || (myUnit.getDistance(neutralUnit) < myUnit.getDistance(closestMineral)))) {
             			
+            			lowestSaturation = saturation;
             			closestMineral = neutralUnit;           			
             		}
             	}
@@ -761,26 +789,6 @@ public class GuiBot extends DefaultBWListener {
      */
     public void controlArmy() {
     	//default attack position if you can't see anything    	
-    	if(attackPosition == null || !game.isVisible(attackPosition.toTilePosition())) {
-    		if(enemyMain != null) {
-	    		attackPosition = enemyMain.toPosition();
-    		} else {
-    	    	Position myBase = new Position(self.getStartLocation().toPosition().getX() + 2*PIXELS_PER_TILE,
-						self.getStartLocation().toPosition().getY() + (int) 1.5*PIXELS_PER_TILE);
-    	    	attackPosition = BWTA.getNearestChokepoint(myBase).getCenter();
-    		}
-    	} else { 
-    		//attackPosition goes to null when the game ends, causing errors    	
-	    	//If you can see the target location, pick targets more intelligently
-    		Position tempPosition = null;   
-    		for(Unit hisUnit: game.enemy().getUnits()) {
-    			if(tempPosition == null || hisUnit.getPosition().getDistance(attackPosition) < tempPosition.getDistance(attackPosition)) {
-    				tempPosition = hisUnit.getPosition();
-    			}
-    		}
-    		if(tempPosition != null)
-    			attackPosition = tempPosition;	    	
-    	}
 	    
     	game.drawLineMap(new Position(attackPosition.getX() - 5,  attackPosition.getY() - 5), 
     		new Position(attackPosition.getX() + 5,  attackPosition.getY() + 5), Color.Red);
@@ -802,7 +810,7 @@ public class GuiBot extends DefaultBWListener {
     		closestSquishy = null;
     		closestGroundSquishy = null;
         	closestCloaked = null;
-    		if(myUnit.isCompleted() && !myUnit.getType().isBuilding() && !myUnit.getType().isWorker()) {
+    		if(myUnit.isCompleted() && !myUnit.getType().isBuilding()) {// && !myUnit.getType().isWorker()) {
 				for(Unit hisUnit: game.enemy().getUnits()) { 				
 					if(hisUnit.isVisible(self) && !hisUnit.isInvincible() 					
 						&& (!hisUnit.getType().isBuilding() || hisUnit.getType().canAttack() || hisUnit.getType() == UnitType.Terran_Bunker)) {
@@ -957,7 +965,9 @@ public class GuiBot extends DefaultBWListener {
 		    					closestPassenger = null;
 		    					followUnit = null;
 		    					for(Unit u: self.getUnits()) {
-		    						if(u.getType() == UnitType.Protoss_High_Templar && u.isCompleted() && !u.isLoaded()) {
+		    						if(u.getType() == UnitType.Protoss_High_Templar && u.isCompleted() && !u.isLoaded()
+		    							&& u.getDistance(myUnit) < self.sightRange(myUnit.getType())) {
+		    							
 		    							if (u.getSpellCooldown() == 0) {		
 		    								if(closestPassenger == null || u.getDistance(myUnit) < closestPassenger.getDistance(myUnit)) {
 		    									closestPassenger = u;		    							
