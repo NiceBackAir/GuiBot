@@ -346,6 +346,8 @@ public class GuiBot extends DefaultBWListener {
 	        BOProgress = Math.max(0, i-1);
 	        if(nextItem != null)
 	        	game.drawTextScreen(250, 30, "Next Item: " + BOProgress + " " + nextItem.toString());
+	        else
+	        	game.drawTextScreen(250, 30, "Next Item: -----");
     	} catch (Exception e) {
     		e.printStackTrace(System.out);
     	}
@@ -511,19 +513,19 @@ public class GuiBot extends DefaultBWListener {
         for (Unit myUnit : self.getUnits()) {
             if (myUnit.getType() == UnitType.Protoss_Robotics_Facility && myUnit.isCompleted()) {
             	if(myUnit.isTraining()) {
-            	} else if(self.completedUnitCount(UnitType.Protoss_Shuttle) == 0) {
+            	} else if(self.allUnitCount(UnitType.Protoss_Shuttle) == 0) {
             		prepareUnit(myUnit, UnitType.Protoss_Shuttle);
-            	} else if(self.completedUnitCount(UnitType.Protoss_Observer) == 0) {
+            	} else if(self.allUnitCount(UnitType.Protoss_Observer) == 0) {
             		prepareUnit(myUnit, UnitType.Protoss_Observer);
-            	} else if(self.completedUnitCount(UnitType.Protoss_Reaver) == 0) {
+            	} else if(self.allUnitCount(UnitType.Protoss_Reaver) == 0) {
                 	prepareUnit(myUnit, UnitType.Protoss_Reaver);
-            	} else if(self.completedUnitCount(UnitType.Protoss_Shuttle) < 2) {
+            	} else if(self.allUnitCount(UnitType.Protoss_Observer) < 2) {
+            		prepareUnit(myUnit, UnitType.Protoss_Observer);
+            	} else if(self.allUnitCount(UnitType.Protoss_Reaver) < 2) {
+                	prepareUnit(myUnit, UnitType.Protoss_Reaver);
+            	} else if(self.allUnitCount(UnitType.Protoss_Shuttle) < 2) {
                 	prepareUnit(myUnit, UnitType.Protoss_Shuttle);
-            	} else if(self.completedUnitCount(UnitType.Protoss_Observer) < 2) {
-            		prepareUnit(myUnit, UnitType.Protoss_Observer);
-            	} else if(self.completedUnitCount(UnitType.Protoss_Reaver) < 2) {
-                	prepareUnit(myUnit, UnitType.Protoss_Reaver);
-            	} else if(self.completedUnitCount(UnitType.Protoss_Observer) < 5) {
+            	} else if(self.allUnitCount(UnitType.Protoss_Observer) < 5) {
             		prepareUnit(myUnit, UnitType.Protoss_Observer);
             	}
             }     
@@ -556,7 +558,7 @@ public class GuiBot extends DefaultBWListener {
             			if(selectedBO[BOProgress] == UnitType.Protoss_Corsair) {
             				prepareUnit(myUnit, UnitType.Protoss_Corsair);
             			}
-            		} else if(game.enemy().getRace() == Race.Zerg && self.completedUnitCount(UnitType.Protoss_Corsair) < 6) {
+            		} else if(game.enemy().getRace() == Race.Zerg && self.allUnitCount(UnitType.Protoss_Corsair) < 6) {
             			prepareUnit(myUnit, UnitType.Protoss_Corsair);
             		} else if(game.enemy().getRace() == Race.Terran) {
             			prepareUnit(myUnit, UnitType.Protoss_Arbiter);
@@ -643,9 +645,9 @@ public class GuiBot extends DefaultBWListener {
     public UnitType transition() {
     	UnitType nextBuilding = null;
     	
-    	float pylonSupplyPerFrame = 0;
-    	pylonSupplyPerFrame = self.incompleteUnitCount(UnitType.Protoss_Pylon)*UnitType.Protoss_Pylon.supplyProvided()/UnitType.Protoss_Pylon.buildTime()
-    			+ self.incompleteUnitCount(UnitType.Protoss_Nexus)*UnitType.Protoss_Nexus.supplyProvided()/UnitType.Protoss_Nexus.buildTime();
+    	double pylonSupplyPerFrame = 0;
+    	pylonSupplyPerFrame = self.incompleteUnitCount(UnitType.Protoss_Pylon)*UnitType.Protoss_Pylon.supplyProvided()/(1.0*UnitType.Protoss_Pylon.buildTime())
+    			+ self.incompleteUnitCount(UnitType.Protoss_Nexus)*UnitType.Protoss_Nexus.supplyProvided()/(1.0*UnitType.Protoss_Nexus.buildTime());
     	
     	if(pylonSupplyPerFrame <= supplyPerFrame && self.supplyUsed() >= self.supplyTotal() - 20 && self.supplyTotal() < 400) {
     		//don't get supply blocked
@@ -840,14 +842,6 @@ public class GuiBot extends DefaultBWListener {
 	    	myUnit.move(farthestMain.toPosition());
     	} else {
     		BaseLocation likelyExpo = null;
-        	for(BaseLocation b: BWTA.getBaseLocations()) {
-	    		if(!(b.isIsland() && !myUnit.isFlying()) && !game.isExplored(b.getTilePosition()) && 
-	    			(likelyExpo == null || b.getDistance(enemyMain.toPosition()) 
-	    			< likelyExpo.getDistance(enemyMain.toPosition()))) {
-	    			
-	    			likelyExpo = b;
-	    		}
-	    	}
         	if(likelyExpo == null) {
         		//after checking all explored bases, go back and check ones that aren't visible
             	for(BaseLocation b: BWTA.getBaseLocations()) {
@@ -871,7 +865,7 @@ public class GuiBot extends DefaultBWListener {
     	    	}
         	}
         	myUnit.move(likelyExpo.getPosition());
-    		for(Unit hisUnit: myUnit.getUnitsInRadius(myUnit.getType().sightRange())) {
+    		for(Unit hisUnit: myUnit.getUnitsInRadius(myUnit.getType().sightRange()+32)) {
 				if(hisUnit.getPlayer().equals(game.enemy())				
 					&& (!hisUnit.getType().isBuilding() || hisUnit.getType() == UnitType.Terran_Bunker)) {
 					
@@ -937,7 +931,7 @@ public class GuiBot extends DefaultBWListener {
 					}    				
 				}	
 				closestSquishy = closestEnemy;
-				for(Unit hisUnit: myUnit.getUnitsInRadius(myUnit.getType().sightRange())) {    				
+				for(Unit hisUnit: myUnit.getUnitsInRadius(myUnit.getType().sightRange()+32)) {    				
 					if(hisUnit.getPlayer().equals(game.enemy()) && hisUnit.isVisible(self) && hisUnit.isDetected()) {
 //							&& hisUnit.getType().isBuilding() && !hisUnit.getType().canAttack() && hisUnit.getType() != UnitType.Terran_Bunker) {
 						
@@ -1003,7 +997,11 @@ public class GuiBot extends DefaultBWListener {
 	    				myUnit.attack(attackPosition);
 	    			}
 	    		} else if(myUnit.getType() == UnitType.Protoss_Zealot) {  	    				 
-    				if (myUnit.getGroundWeaponCooldown() > 0) {// && myUnit.getGroundWeaponCooldown() < 21){
+    				if (myUnit.getGroundWeaponCooldown() > 0 
+    					|| closestGroundSquishy != null && myUnit.getGroundWeaponCooldown() 
+    					> myUnit.getPosition().getApproxDistance(closestGroundSquishy.getPosition())/myUnit.getType().topSpeed()
+    					|| closestGroundEnemy != null && myUnit.getGroundWeaponCooldown() 
+    					> myUnit.getPosition().getApproxDistance(closestGroundEnemy.getPosition())/myUnit.getType().topSpeed()) {
     					if(enemyMain != null)
     						myUnit.move(enemyMain.toPosition());
     					else
@@ -1012,10 +1010,18 @@ public class GuiBot extends DefaultBWListener {
     					&& myUnit.getLastCommand().getTarget().exists()) {
     					//let attack finish
     					game.drawTextMap(myUnit.getPosition(), myUnit.getLastCommand().getTarget() +"");
-    				} else if(closestGroundSquishy != null && myUnit.isInWeaponRange(closestGroundSquishy)) {
-    					myUnit.attack(closestGroundSquishy);
-    				}  else if(closestGroundEnemy != null && myUnit.isInWeaponRange(closestGroundEnemy)) {
-    					myUnit.attack(closestGroundEnemy);
+    				} else if(closestGroundSquishy != null) {
+    					if(myUnit.isInWeaponRange(closestGroundSquishy)) {
+    						myUnit.attack(closestGroundSquishy);
+    					} else if(myUnit.getPosition().getApproxDistance(closestGroundSquishy.getPosition()) > myUnit.getType().seekRange()) {
+    						myUnit.move(closestGroundSquishy.getPosition());
+    					}
+    				}  else if(closestGroundEnemy != null) {
+    					if(myUnit.isInWeaponRange(closestGroundEnemy)) {
+    						myUnit.attack(closestGroundEnemy);
+    					} else if(myUnit.getPosition().getApproxDistance(closestGroundEnemy.getPosition()) > myUnit.getType().seekRange()) {
+    						myUnit.move(closestGroundEnemy.getPosition());
+    					}    					
     				} else if(self.getUpgradeLevel(UpgradeType.Leg_Enhancements) > 0 || self.completedUnitCount(UnitType.Protoss_Zealot) >= 12) {
     					myUnit.move(attackPosition);
     				} else if(intersects(myUnit.getType(), myUnit.getTilePosition(), naturalChoke.getSides().first, naturalChoke.getSides().second)) {
@@ -1234,24 +1240,29 @@ public class GuiBot extends DefaultBWListener {
     					myUnit.move(new Position(myUnit.getX() + (int)(12*(Math.random()- 0.5)),myUnit.getY()));
     				}		    		
 	    		} else if(myUnit.getType() == UnitType.Protoss_High_Templar) {  
+	    			boolean gotCommand = false;
 	    			if(myUnit.getEnergy() < 75 || !self.hasResearched(TechType.Psionic_Storm)) {
 	    				myUnit.move(self.getStartLocation().toPosition());
+	    				gotCommand = true;
 	    			} else if (canStorm) {
 	    				HashMap<TilePosition, Double> stormMap = new HashMap<TilePosition, Double>();
 	    				TilePosition tempTile = null;
 	    				int playerFactor;
 	    				double tileFactor;
+	    				double cloakFactor;
 	    				for (Unit u: myUnit.getUnitsInRadius(9*PIXELS_PER_TILE)) {
-	    					if(!u.getType().isBuilding()) {
+	    					if(!u.getType().isBuilding() && !u.isUnderStorm() && u.getType() != UnitType.Zerg_Larva) {
 	    						playerFactor = 0;
 	    						tileFactor = 1;
+	    						cloakFactor = 1;
 	    						
-	    						if(!u.isUnderStorm()) {
-		    						if(u.getPlayer() == game.enemy()) {
-		    							playerFactor = 1;
-		    						} else if(u.getPlayer() == self) {
-		    							playerFactor = -1;
-		    						}
+	    						if(u.getPlayer() == game.enemy()) {
+	    							playerFactor = 1;
+	    							if(!u.isDetected() && u.isVisible()) {
+	    								cloakFactor = 2;
+	    							}
+	    						} else if(u.getPlayer() == self) {
+	    							playerFactor = -1;
 	    						}
 	    						
 	    						for(int x = -1; x<=1; x++) {
@@ -1263,9 +1274,9 @@ public class GuiBot extends DefaultBWListener {
 	    								}
 	    								tempTile = new TilePosition(u.getTilePosition().getX() +x, u.getTilePosition().getY() + y);
 	        							if(stormMap.get(tempTile) == null) {
-	        								stormMap.put(tempTile, playerFactor*tileFactor);
+	        								stormMap.put(tempTile, playerFactor*tileFactor*cloakFactor);
 	        							} else {
-	        								stormMap.replace(tempTile, stormMap.get(tempTile) + playerFactor*tileFactor);
+	        								stormMap.replace(tempTile, stormMap.get(tempTile) + playerFactor*tileFactor*cloakFactor);
 	        							}
 	    							}
 	    						}
@@ -1285,13 +1296,18 @@ public class GuiBot extends DefaultBWListener {
 	    				}
 	    				if(stormLocation != null) {
 	    					myUnit.useTech(TechType.Psionic_Storm, new Position(stormLocation.getX()*32 + 16, stormLocation.getY()*32 + 16));
+	    					gotCommand = true;
 	    					game.sendText(mostCasualties+"");
 	    				}
-	    			} else if (closestEnemy != null && !closestEnemy.getType().groundWeapon().equals(WeaponType.None)
-	    		    	&& closestEnemy.getDistance(myUnit) < game.enemy().weaponMaxRange(closestEnemy.getType().groundWeapon()) + 32) {
-	    				myUnit.move(self.getStartLocation().toPosition());
-	    			} else
-	    				myUnit.move(attackPosition);
+	    			}
+	    			if(!gotCommand) {
+		    			if (closestEnemy != null && !closestEnemy.getType().groundWeapon().equals(WeaponType.None)
+		    		    	&& closestEnemy.getDistance(myUnit) < game.enemy().weaponMaxRange(closestEnemy.getType().groundWeapon()) + 32) {
+		    				myUnit.move(self.getStartLocation().toPosition());
+		    			} else {
+		    				myUnit.move(attackPosition);
+		    			}
+	    			}
 	    			game.drawTextMap(myUnit.getPosition(), myUnit.getSpellCooldown()+"");
 	    		} else if(myUnit.getType() == UnitType.Protoss_Probe) {
 	    			if(closestEnemy != null && (!closestEnemy.getType().groundWeapon().equals(WeaponType.None) || closestEnemy.getType().isSpellcaster()
@@ -1723,7 +1739,14 @@ public class GuiBot extends DefaultBWListener {
     	
     	//decide whether to build the building
     	if (closestWorker != null && canAfford(building, mineralsWhileMoving, gasWhileMoving)) {
-    		if(game.canBuildHere(buildingLoc, building, closestWorker, true)
+    		boolean fullyExplored = true;
+    		for(x=0; x<building.tileWidth();x++) {
+        		for(y=0; y<building.tileHeight();y++) {
+        			if(!game.isExplored(new TilePosition(buildingLoc.getX()+x, buildingLoc.getY()+y)))
+        				fullyExplored = false;
+        		}
+    		}
+    		if(game.canBuildHere(buildingLoc, building, closestWorker, true) && fullyExplored
     			&& self.minerals() >= building.mineralPrice() && self.gas() >= building.gasPrice()) {     
     			closestWorker.build(building, buildingLoc);
 //    			reservedMinerals += building.mineralPrice();
