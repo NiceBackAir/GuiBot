@@ -101,21 +101,22 @@ public class GuiBot extends DefaultBWListener {
     
     @Override
     public void onUnitDestroy(Unit unit) { 
-    	try {
-	    	if(unit.getID() == scoutingProbe.getID()) {
-	    		Unit p = null;
-	    		for(Unit u: self.getUnits()) {
-	    			if(u.getType() == UnitType.Protoss_Probe && (p == null 
-	    				|| u.getPosition().getApproxDistance(unit.getPosition()) < p.getPosition().getApproxDistance(unit.getPosition()))) {
-	    				
-	    				p = u;
-	    			}
-	    		}
-	    		scoutingProbe = p;
-	    	}
-    	} catch (Exception e) {
-    		e.printStackTrace(System.out);
-    	}
+    	//scouting probes keep suiciding for now
+//    	try {
+//	    	if(unit.getID() == scoutingProbe.getID()) {
+//	    		Unit p = null;
+//	    		for(Unit u: self.getUnits()) {
+//	    			if(u.getType() == UnitType.Protoss_Probe && (p == null 
+//	    				|| u.getPosition().getApproxDistance(unit.getPosition()) < p.getPosition().getApproxDistance(unit.getPosition()))) {
+//	    				
+//	    				p = u;
+//	    			}
+//	    		}
+//	    		scoutingProbe = p;
+//	    	}
+//    	} catch (Exception e) {
+//    		e.printStackTrace(System.out);
+//    	}
     }
     
     @Override
@@ -465,7 +466,8 @@ public class GuiBot extends DefaultBWListener {
         for (Unit myUnit : self.getUnits()) {
             //if there's enough minerals, train a probe
             if (myUnit.getType() == UnitType.Protoss_Nexus && myUnit.isCompleted()
-            	&& self.completedUnitCount(UnitType.Protoss_Probe) <= self.allUnitCount(UnitType.Protoss_Nexus)*30) {          	
+            	&& self.completedUnitCount(UnitType.Protoss_Probe) <= self.allUnitCount(UnitType.Protoss_Nexus)*30
+            	&& self.completedUnitCount(UnitType.Protoss_Probe) <= 90) {          	
      
             	if(self.completedUnitCount(UnitType.Protoss_Probe) < 4 && self.minerals() > 50 && !myUnit.isTraining()) {
             		//short circuit for when all probes are killed
@@ -914,7 +916,7 @@ public class GuiBot extends DefaultBWListener {
     		closestGroundEnemy = null;
         	closestCloaked = null;
         	weakestAirEnemy = null;
-    		if(myUnit.isCompleted() && !myUnit.getType().isBuilding() && !myUnit.getType().isWorker()) {
+    		if(myUnit.isCompleted() && !myUnit.getType().isBuilding()) {// && !myUnit.getType().isWorker()) {
 				for(Unit hisUnit: myUnit.getUnitsInRadius(myUnit.getType().sightRange())) { 				
 					if(hisUnit.getPlayer().equals(game.enemy()) && hisUnit.isVisible(self) && !hisUnit.isInvincible() 					
 						&& (!hisUnit.getType().isBuilding() || hisUnit.getType().canAttack() || hisUnit.getType() == UnitType.Terran_Bunker)
@@ -1275,7 +1277,8 @@ public class GuiBot extends DefaultBWListener {
 	    				TilePosition stormLocation = null;
 	    				double mostCasualties = 0;
 	    				for(Map.Entry<TilePosition, Double> entry: stormMap.entrySet()) {
-	    					if(entry.getValue() >= 3 && entry.getValue() > mostCasualties) {
+	    					//set storm minimum here
+	    					if(entry.getValue() >= 3.5 && entry.getValue() > mostCasualties) {
 	    						mostCasualties = entry.getValue();
 	    						stormLocation = entry.getKey();
 	    					}
