@@ -107,21 +107,21 @@ public class GuiBot extends DefaultBWListener {
     @Override
     public void onUnitDestroy(Unit unit) { 
     	//scouting probes keep suiciding for now
-//    	try {
-//	    	if(unit.getID() == scoutingProbe.getID()) {
-//	    		Unit p = null;
-//	    		for(Unit u: self.getUnits()) {
-//	    			if(u.getType() == UnitType.Protoss_Probe && (p == null 
-//	    				|| u.getPosition().getApproxDistance(unit.getPosition()) < p.getPosition().getApproxDistance(unit.getPosition()))) {
-//	    				
-//	    				p = u;
-//	    			}
-//	    		}
-//	    		scoutingProbe = p;
-//	    	}
-//    	} catch (Exception e) {
-//    		e.printStackTrace(System.out);
-//    	}
+    	try {
+	    	if(unit.getID() == scoutingProbe.getID()) {
+	    		Unit p = null;
+	    		for(Unit u: self.getUnits()) {
+	    			if(u.getType() == UnitType.Protoss_Probe && (p == null 
+	    				|| u.getPosition().getApproxDistance(unit.getPosition()) < p.getPosition().getApproxDistance(unit.getPosition()))) {
+	    				
+	    				p = u;
+	    			}
+	    		}
+	    		scoutingProbe = p;
+	    	}
+    	} catch (Exception e) {
+    		e.printStackTrace(System.out);
+    	}
     }
     
     @Override
@@ -452,8 +452,8 @@ public class GuiBot extends DefaultBWListener {
 	        	if (enemyMain == null && hisUnit.getType().isBuilding()) {
 	        		enemyMain = hisUnit.getTilePosition();
 	        	}
-	        	if(airAttackPosition == null || hisUnit.getPosition().getApproxDistance(self.getStartLocation().toPosition()) 
-	        		< airAttackPosition.getApproxDistance(self.getStartLocation().toPosition())) {
+	        	if(hisUnit.isFlying() && (airAttackPosition == null || hisUnit.getPosition().getApproxDistance(self.getStartLocation().toPosition()) 
+	        		< airAttackPosition.getApproxDistance(self.getStartLocation().toPosition()))) {
 	        		
 	        		airAttackPosition = hisUnit.getPosition();
 	        	}
@@ -508,9 +508,12 @@ public class GuiBot extends DefaultBWListener {
             }
         }        
         for (Unit myUnit : self.getUnits()) {
-            if (myUnit.getType() == UnitType.Protoss_Cybernetics_Core
-            	&& (game.enemy().getRace() != Race.Zerg || BOProgress >= selectedBO.length)) {
-            	prepareUpgrade(myUnit, UpgradeType.Singularity_Charge);
+            if (myUnit.getType() == UnitType.Protoss_Cybernetics_Core) {
+            	if (game.enemy().getRace() == Race.Terran || self.allUnitCount(UnitType.Protoss_Dragoon) > 0) {
+            		prepareUpgrade(myUnit, UpgradeType.Singularity_Charge);
+            	} else if (self.completedUnitCount(UnitType.Protoss_Corsair) > 0) {
+            		prepareUpgrade(myUnit, UpgradeType.Protoss_Air_Weapons);
+            	}
         	}
         }
         for (Unit myUnit : self.getUnits()) {
@@ -892,44 +895,185 @@ public class GuiBot extends DefaultBWListener {
     	    		}
     	    	}
         	}
+        	
+        	double scale = 35*5;
+        	double[] moveVector = {0,0};
+        	
+
         	double d = myUnit.getPosition().getApproxDistance(likelyExpo.getPosition());
-         	double[] moveVector = {(likelyExpo.getX() - myUnit.getX())*2*35*5/d,(likelyExpo.getY() - myUnit.getY())*2*35*5/d};
+         	double[] scoutVector = {(likelyExpo.getX() - myUnit.getX())*scale/d,(likelyExpo.getY() - myUnit.getY())*scale/d};
+         	double[] targetVector = {0,0};
+         	double[] threatVector = {0,0};
+         	double[] terrainVector = {0,0};
+         	double[] clusterVector = {0,0};
+        	double[] attackVector = {0,0};   
+        	
+        	//fight visible air units instead of scout
+        	if(myUnit.getType() == UnitType.Protoss_Corsair && airAttackPosition != null) {
+        		d = myUnit.getPosition().getApproxDistance(airAttackPosition);
+        		attackVector = new double[]{(airAttackPosition.getX() - myUnit.getX())*scale/d,(airAttackPosition.getY() - myUnit.getY())*scale/d};
+        	}
+         	double hisRange;
+         	double myRange;      	
+         	//don't let air units get stuck in corners
+         	if(myUnit.isFlying()) {
+         		for(int x=0; x<=(game.mapWidth())*32; x+=(game.mapWidth())*32) {
+         			for(int y=0; y<=(game.mapHeight())*32; y+=(game.mapHeight())*32) {
+         				//walkable uses mini-tiles
+         				//if(game.isWalkable(x/8, y/8)) {
+         					Position cornerPos = new Position(x,y);
+         					game.drawCircleMap(x, y, (int) scale + 32, Color.Red);
+         					d = cornerPos.getApproxDistance(myUnit.getPosition());
+         					double rectDist = Math.abs(x-myUnit.getX()) + Math.abs(y-myUnit.getY());
+	    					terrainVector[0] += -3*scale*scale/d/d/rectDist*(x-myUnit.getX());
+	    					terrainVector[1] += -3*scale*scale/d/d/rectDist*(y-myUnit.getY());
+         				//}
+         			}
+         		}
+         	}
+         	
     		for(Unit hisUnit: myUnit.getUnitsInRadius(myUnit.getType().sightRange()+32)) {
 				if(hisUnit.getPlayer().equals(game.enemy())				
 					&& (!hisUnit.getType().isBuilding() || hisUnit.getType().canAttack() || hisUnit.getType() == UnitType.Terran_Bunker)) {
 					
 	    			if(myUnit.isFlying() && myUnit.isDetected() && !hisUnit.getType().airWeapon().equals(WeaponType.None)) {	
-	    				double hisRange = game.enemy().weaponMaxRange(hisUnit.getType().airWeapon()) + 32;
+	    				hisRange = game.enemy().weaponMaxRange(hisUnit.getType().airWeapon()) + 32;
 	    				d = myUnit.getPosition().getApproxDistance(hisUnit.getPosition());
 //	    				if(myUnit.getDistance(hisUnit) <= hisRange) {	    			
 	    					//potential function is 1/d^2
-	    					moveVector[0] += -2*35*5*hisRange/d/d*(hisUnit.getX()-myUnit.getX());
-	    					moveVector[1] += -2*35*5*hisRange/d/d*(hisUnit.getY()-myUnit.getY());
+	    					threatVector[0] += -2*scale*hisRange/d/d*(hisUnit.getX()-myUnit.getX());
+	    					threatVector[1] += -2*scale*hisRange/d/d*(hisUnit.getY()-myUnit.getY());
 //	    				} else {
 //	    					//potential function is 1/(d-hisRange)^2
-//	    					moveVector[0] += -4*35*5/d/(d-hisRange)*(hisUnit.getX()-myUnit.getX());
-//	    					moveVector[1] += -4*35*5/d/(d-hisRange)*(hisUnit.getY()-myUnit.getY());
+//	    					moveVector[0] += -4*scale/d/(d-hisRange)*(hisUnit.getX()-myUnit.getX());
+//	    					moveVector[1] += -4*scale/d/(d-hisRange)*(hisUnit.getY()-myUnit.getY());
 //	    				}	    				
-	    				if(myUnit.getDistance(hisUnit) <= hisRange) {	  
-	    					//if you're getting hurt bad, just retreat
-	    					d = myUnit.getPosition().getApproxDistance(likelyExpo.getPosition());
-	    					moveVector[0] -= 3*35*5*(likelyExpo.getX() - myUnit.getX())/d;
-	    					moveVector[1] -= 3*35*5*(likelyExpo.getY() - myUnit.getY())/d;
-	    				}
+//	    				if(myUnit.getDistance(hisUnit) <= hisRange) {	  
+//	    					//if you're getting hurt bad, just retreat
+//	    					d = myUnit.getPosition().getApproxDistance(likelyExpo.getPosition());
+//	    					moveVector[0] += -3*scale*(likelyExpo.getX() - myUnit.getX())/d;
+//	    					moveVector[1] += -3*scale*(likelyExpo.getY() - myUnit.getY())/d;
+//	    				}
 	    			} else if (myUnit.getType() == UnitType.Protoss_Probe && !hisUnit.getType().groundWeapon().equals(WeaponType.None)) {
 	    				gatherMinerals(myUnit, false);
 	    			}
+	    			
+	    			if(myUnit.getType() == UnitType.Protoss_Corsair && hisUnit.isFlying()) {
+	    				myRange = self.weaponMaxRange(myUnit.getType().airWeapon());
+    					targetVector[0] += 2*scale*myRange/d/d*(hisUnit.getX()-myUnit.getX());
+    					targetVector[1] += 2*scale*myRange/d/d*(hisUnit.getY()-myUnit.getY());
+	    			}
 				}
-    		} 		
-    		//normalization
-    		moveVector[0] = 32*5*moveVector[0]/Math.sqrt(Math.pow(moveVector[0],2) + Math.pow(moveVector[1],2));
-    		moveVector[1] = 32*5*moveVector[1]/Math.sqrt(Math.pow(moveVector[0],2) + Math.pow(moveVector[1],2));
-    		if(myUnit.getType() != UnitType.Protoss_Probe)
-    			myUnit.move(new Position(myUnit.getX()+(int)moveVector[0], myUnit.getY()+(int)moveVector[1]));
-    		else
-    			myUnit.move(likelyExpo.getPosition());
-        	game.drawLineMap(myUnit.getX(), myUnit.getY(), myUnit.getX()+(int)moveVector[0], myUnit.getY()+(int)moveVector[1], Color.Green);
+    		}	
+    	
+         	int hitsToKillHim;
+         	Unit weakestAirEnemy = null;
+         	int leastHits = 9999;       
+         	boolean safeToAttack = false;
+         	int clusterCount = 1;
+    		
+    		for(Unit u: self.getUnits()) {
+    			if(u.isCompleted() && u.getType() == myUnit.getType() && u.getID() != myUnit.getID()) {
+    				d = myUnit.getPosition().getApproxDistance(u.getPosition());
+    				if(myUnit.getType() == UnitType.Protoss_Observer) {
+    					clusterVector[0] += -2*scale*myUnit.getType().sightRange()/d/d*(u.getX()-myUnit.getX());
+    					clusterVector[1] += -2*scale*myUnit.getType().sightRange()/d/d*(u.getY()-myUnit.getY());
+    				} else if(myUnit.getType() == UnitType.Protoss_Corsair) {
+    					clusterVector[0] += 0.2*scale/d*(u.getX()-myUnit.getX());
+    					clusterVector[1] += 0.2*scale/d*(u.getY()-myUnit.getY());
+    					if(d < scale) {
+    						clusterCount++;
+    					}
+    				}
+    			}
+    		}
+    		//finalize vector
+    		moveVector[0] = terrainVector[0] + threatVector[0] + clusterVector[0];
+    		moveVector[1] = terrainVector[1] + threatVector[1] + clusterVector[1];
+    		if(targetVector[0] == 0 && targetVector[1] == 0) {
+    			if(attackVector[0] == 0 && attackVector[1] == 0) {
+    				moveVector[0] += scoutVector[0];
+    				moveVector[1] += scoutVector[1];
+    			} else {
+    				moveVector[0] += attackVector[0];
+    				moveVector[1] += attackVector[1];
+    			}
+    		} else {
+    			targetVector = setMagnitude(targetVector, scale*clusterCount);
+    			moveVector[0] += targetVector[0];
+    			moveVector[1] += targetVector[1];
+    		}
+    		
+    		moveVector = setMagnitude(moveVector, scale);
+    		moveVector = adjustForWalls(moveVector, myUnit);
+    		
+	    	if(myUnit.getType() == UnitType.Protoss_Corsair) {	
+	    		//choose the best units to attack
+	    		for(Unit hisUnit: myUnit.getUnitsInRadius(self.weaponMaxRange(myUnit.getType().airWeapon()) + 32)) {
+					if(hisUnit.getPlayer().equals(game.enemy())	&& hisUnit.isCompleted() && hisUnit.isFlying() && myUnit.isInWeaponRange(hisUnit)) {
+						safeToAttack = ((hisUnit.getX()-myUnit.getX())*moveVector[0] + (hisUnit.getY()-myUnit.getY())*moveVector[1]> 0);
+						hitsToKillHim = (int) Math.ceil(hisUnit.getHitPoints()/(double)game.getDamageTo(hisUnit.getType(), myUnit.getType(),game.enemy()));
+						
+						if(safeToAttack && hitsToKillHim < leastHits) {	        						
+							weakestAirEnemy = hisUnit;
+							leastHits = hitsToKillHim;
+						}
+					}
+	    		}
+    		}
+    		
+    		if(myUnit.getType() == UnitType.Protoss_Probe) {   
+    			myUnit.move(likelyExpo.getPosition()); 	
+    		} else {  	
+    			if(weakestAirEnemy != null && myUnit.getAirWeaponCooldown() == 0) {   			
+					myUnit.attack(weakestAirEnemy);
+					game.drawLineMap(myUnit.getX(), myUnit.getY(), weakestAirEnemy.getX(), weakestAirEnemy.getY(), Color.Red);
+    			} else {
+    				myUnit.move(new Position(myUnit.getX()+(int)moveVector[0], myUnit.getY()+(int)moveVector[1]));
+    				game.drawLineMap(myUnit.getX(), myUnit.getY(), myUnit.getX()+(int)moveVector[0], myUnit.getY()+(int)moveVector[1], Color.Green);
+    			}
+    		}        	
     	}
+    }
+    
+    /**	Sets the magnitude of a vector without changing its direction
+     * 
+     * @param v		vector to modify
+     * @param scale	desired magnitude
+     * @return		vector scaled to magnitude
+     */
+    public double[] setMagnitude(double[] v, double scale) {
+    	return new double[] {scale*v[0]/Math.sqrt(v[0]*v[0] + v[1]*v[1]),scale*v[1]/Math.sqrt(v[0]*v[0] + v[1]*v[1])};
+    }
+    
+    /** Makes hovering units move at full speed even if they reach the end of the map.
+     * 
+     * @param v			vector to modify
+     * @param myUnit	unit who's moving
+     * @return			vector pointing somewhere in bounds of the map
+     */
+    public double[] adjustForWalls(double[] v, Unit myUnit) {
+    	double r = Math.sqrt(v[0]*v[0] + v[1]*v[1]);
+    	double margin = Math.max(myUnit.getType().width(), myUnit.getType().height())/2;
+    	double dx = 0;
+    	double dy = 0;
+    	if(myUnit.getX() + v[0] < margin) {
+    		dx = margin-myUnit.getX();
+    		dy = Math.signum(v[1])*Math.sqrt(r*r-dx*dx);
+    	} else if(myUnit.getX() + v[0] > game.mapWidth()*32 - margin) {
+    		dx = game.mapWidth()*32 - margin - myUnit.getX();
+    		dy = Math.signum(v[1])*Math.sqrt(r*r-dx*dx);
+    	} else if(myUnit.getY() + v[1] < margin) {
+    		dy = margin - myUnit.getY();
+    		dx = Math.signum(v[0])*Math.sqrt(r*r-dy*dy);
+    	} else if(myUnit.getY() + v[1] > game.mapHeight()*32 - margin) {
+    		dy = game.mapHeight()*32 - margin - myUnit.getY();
+    		dx = Math.signum(v[0])*Math.sqrt(r*r-dy*dy);
+    	} else {
+    		dx = v[0];
+    		dy = v[1];
+    	}
+    	return new double[] {dx, dy};
     }
     
     /** Micro army to optimize army value and gather at certain locations
@@ -977,10 +1121,10 @@ public class GuiBot extends DefaultBWListener {
 							canStorm = true;
 						
 						if(!hisUnit.isFlying() && (closestGroundSquishy == null
-							||	myUnit.getPosition().getApproxDistance(hisUnit.getPosition()) < myUnit.getPosition().getApproxDistance(closestGroundSquishy.getPosition()))) {
+							|| myUnit.getPosition().getApproxDistance(hisUnit.getPosition()) < myUnit.getPosition().getApproxDistance(closestGroundSquishy.getPosition()))) {
 							
 							closestGroundSquishy = hisUnit;
-						}				
+						}
 					}    				
 				}	
 				closestSquishy = closestEnemy;
@@ -1066,15 +1210,19 @@ public class GuiBot extends DefaultBWListener {
     				} else if(closestGroundSquishy != null) {
     					if(myUnit.isInWeaponRange(closestGroundSquishy)) {
     						myUnit.attack(closestGroundSquishy);
-    					} else if(myUnit.getPosition().getApproxDistance(closestGroundSquishy.getPosition()) > myUnit.getType().seekRange()) {
+    					} else if(myUnit.getPosition().getApproxDistance(closestGroundSquishy.getPosition()) >= myUnit.getType().seekRange()) {
     						myUnit.move(closestGroundSquishy.getPosition());
+    					} else {
+    						myUnit.attack(closestGroundSquishy.getPosition());
     					}
     				}  else if(closestGroundEnemy != null) {
     					if(myUnit.isInWeaponRange(closestGroundEnemy)) {
     						myUnit.attack(closestGroundEnemy);
-    					} else if(myUnit.getPosition().getApproxDistance(closestGroundEnemy.getPosition()) > myUnit.getType().seekRange()) {
+    					} else if(myUnit.getPosition().getApproxDistance(closestGroundEnemy.getPosition()) >= myUnit.getType().seekRange()) {
     						myUnit.move(closestGroundEnemy.getPosition());
-    					}    					
+    					} else {
+    						myUnit.attack(closestGroundEnemy.getPosition());
+    					}
     				} else if(self.getUpgradeLevel(UpgradeType.Leg_Enhancements) > 0 || self.completedUnitCount(UnitType.Protoss_Zealot) >= 12) {
     					myUnit.move(attackPosition);
     				} else if(intersects(myUnit.getType(), myUnit.getTilePosition(), naturalChoke.getSides().first, naturalChoke.getSides().second)) {
@@ -1273,20 +1421,21 @@ public class GuiBot extends DefaultBWListener {
 	    			game.drawTextMap(myUnit.getPosition(), myUnit.getGroundWeaponCooldown()+"");
 	    			
 	    		} else if(myUnit.getType() == UnitType.Protoss_Corsair) {  	    			
-	    			if(myUnit.isUnderAttack() || (closestEnemy != null && !closestEnemy.getType().airWeapon().equals(WeaponType.None)
-		    			&& closestEnemy.getDistance(myUnit) < game.enemy().weaponMaxRange(closestEnemy.getType().airWeapon()) + 32)) {
-		    				
-	    				scout(myUnit);
-	    			} else if(weakestAirEnemy != null && weakestAirEnemy.isDetected()) {
-	    				if(myUnit.canAttack(weakestAirEnemy) && myUnit.getAirWeaponCooldown() == 0) {
-	    					myUnit.attack(weakestAirEnemy);
-	    				} else {
-	    					myUnit.move(weakestAirEnemy.getPosition());
-	    				}
-    					
-    				} else {
-    					scout(myUnit);
-    				}		    				    		
+	    			scout(myUnit);
+//	    			if(myUnit.isUnderAttack() || (closestEnemy != null && !closestEnemy.getType().airWeapon().equals(WeaponType.None)
+//		    			&& closestEnemy.getDistance(myUnit) < game.enemy().weaponMaxRange(closestEnemy.getType().airWeapon()) + 32)) {
+//		    				
+//	    				scout(myUnit);
+//	    			} else if(weakestAirEnemy != null && weakestAirEnemy.isDetected()) {
+//	    				if(myUnit.canAttack(weakestAirEnemy) && myUnit.getAirWeaponCooldown() == 0) {
+//	    					myUnit.attack(weakestAirEnemy);
+//	    				} else {
+//	    					myUnit.move(weakestAirEnemy.getPosition());
+//	    				}
+//    					
+//    				} else {
+//    					scout(myUnit);
+//    				}		    				    		
 	    		} else if(myUnit.getType() == UnitType.Protoss_High_Templar) {  
 	    			boolean gotCommand = false;
 	    			if(myUnit.getEnergy() < 75 || !self.hasResearched(TechType.Psionic_Storm)) {
