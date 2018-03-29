@@ -917,16 +917,16 @@ public class GuiBot extends DefaultBWListener {
          	double myRange;      	
          	//don't let air units get stuck in corners
          	if(myUnit.isFlying()) {
-         		for(int x=0; x<=(game.mapWidth())*32; x+=(game.mapWidth())*32) {
-         			for(int y=0; y<=(game.mapHeight())*32; y+=(game.mapHeight())*32) {
+         		for(int x=0; x<=(game.mapWidth())*32-1; x+=(game.mapWidth())*32-1) {
+         			for(int y=0; y<=(game.mapHeight())*32-1; y+=(game.mapHeight())*32-1) {
          				//walkable uses mini-tiles
          				//if(game.isWalkable(x/8, y/8)) {
          					Position cornerPos = new Position(x,y);
          					game.drawCircleMap(x, y, (int) scale + 32, Color.Red);
          					d = cornerPos.getApproxDistance(myUnit.getPosition());
          					double rectDist = Math.abs(x-myUnit.getX()) + Math.abs(y-myUnit.getY());
-	    					terrainVector[0] += -3*scale*scale/d/d/rectDist*(x-myUnit.getX());
-	    					terrainVector[1] += -3*scale*scale/d/d/rectDist*(y-myUnit.getY());
+	    					terrainVector[0] += -4*scale*scale/d/d/rectDist*(x-myUnit.getX());
+	    					terrainVector[1] += -4*scale*scale/d/d/rectDist*(y-myUnit.getY());
          				//}
          			}
          		}
@@ -990,6 +990,7 @@ public class GuiBot extends DefaultBWListener {
     		//finalize vector
     		moveVector[0] = terrainVector[0] + threatVector[0] + clusterVector[0];
     		moveVector[1] = terrainVector[1] + threatVector[1] + clusterVector[1];
+    		boolean kiteForward = (moveVector[0]*targetVector[0] + moveVector[1]*targetVector[1] > 0);
     		if(targetVector[0] == 0 && targetVector[1] == 0) {
     			if(attackVector[0] == 0 && attackVector[1] == 0) {
     				moveVector[0] += scoutVector[0];
@@ -999,7 +1000,7 @@ public class GuiBot extends DefaultBWListener {
     				moveVector[1] += attackVector[1];
     			}
     		} else {
-    			targetVector = setMagnitude(targetVector, scale*clusterCount);
+    			targetVector = setMagnitude(targetVector, scale*clusterCount);    			
     			moveVector[0] += targetVector[0];
     			moveVector[1] += targetVector[1];
     		}
@@ -1025,8 +1026,11 @@ public class GuiBot extends DefaultBWListener {
     		if(myUnit.getType() == UnitType.Protoss_Probe) {   
     			myUnit.move(likelyExpo.getPosition()); 	
     		} else {  	
-    			if(weakestAirEnemy != null && myUnit.getAirWeaponCooldown() == 0) {   			
-					myUnit.attack(weakestAirEnemy);
+    			if(weakestAirEnemy != null && myUnit.getAirWeaponCooldown() == 0) {   	
+    				myUnit.attack(weakestAirEnemy);
+					game.drawLineMap(myUnit.getX(), myUnit.getY(), weakestAirEnemy.getX(), weakestAirEnemy.getY(), Color.Red);
+    			} else if(weakestAirEnemy != null && myUnit.getAirWeaponCooldown() != 0 && !kiteForward) {
+    				myUnit.rightClick(weakestAirEnemy);
 					game.drawLineMap(myUnit.getX(), myUnit.getY(), weakestAirEnemy.getX(), weakestAirEnemy.getY(), Color.Red);
     			} else {
     				myUnit.move(new Position(myUnit.getX()+(int)moveVector[0], myUnit.getY()+(int)moveVector[1]));
@@ -1199,10 +1203,10 @@ public class GuiBot extends DefaultBWListener {
     					> myUnit.getPosition().getApproxDistance(closestGroundSquishy.getPosition())/myUnit.getType().topSpeed()
     					|| closestGroundEnemy != null && myUnit.getGroundWeaponCooldown() 
     					> myUnit.getPosition().getApproxDistance(closestGroundEnemy.getPosition())/myUnit.getType().topSpeed()) {
-    					if(enemyMain != null)
-    						myUnit.move(enemyMain.toPosition());
-    					else
-    						myUnit.move(attackPosition);
+//    					if(enemyMain != null)
+//    						myUnit.move(enemyMain.toPosition());
+//    					else
+//    						myUnit.move(attackPosition);
     				} else if(myUnit.getLastCommand().getUnitCommandType() == UnitCommandType.Attack_Unit
     					&& myUnit.getLastCommand().getTarget().exists()) {
     					//let attack finish
@@ -1512,7 +1516,7 @@ public class GuiBot extends DefaultBWListener {
 	    				Unit drillPatch = null;
     					for(Unit n: game.getNeutralUnits()) {
     						if(n.getType().isResourceContainer()
-    							&& BWTA.getRegion(n.getPosition()).equals(BWTA.getRegion(self.getStartLocation()))) {
+    							&& BWTA.getRegion(n.getTilePosition()).equals(BWTA.getRegion(self.getStartLocation()))) {
     						
     							if(drillPatch == null || n.getDistance(closestEnemy.getPosition()) < drillPatch.getDistance(closestEnemy.getPosition())) {
     								drillPatch = n;
