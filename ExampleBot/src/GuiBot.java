@@ -63,6 +63,7 @@ public class GuiBot extends DefaultBWListener {
     //potential maps
     private double[][] visionMap;
     private double[][] gtaDangerMap;
+    private double[][] walkMap;
     
     public void run() {
         mirror.getModule().setEventListener(this);
@@ -193,6 +194,7 @@ public class GuiBot extends DefaultBWListener {
         
         //initialize potential maps
         visionMap = new double[game.mapWidth()][game.mapHeight()];
+        drawMaps();
     }
     
     public UnitType[] pickBuild(Race r) {
@@ -262,6 +264,96 @@ public class GuiBot extends DefaultBWListener {
     	return chosenBuild;
     }
 
+    public void drawMaps() {
+    	walkMap = new double[game.mapWidth()][game.mapHeight()];
+    	for(int x=0; x<game.mapWidth(); x++) {
+	    	for(int y=0; y<game.mapHeight(); y++) {
+	    		walkMap[x][y] = 999;
+	    	}	    	
+	    }
+    	for(int x=0; x<game.mapWidth(); x++) {
+	    	for(int y=0; y<game.mapHeight(); y++) {
+	    		if(y>0) {
+	    			if(!walkable(x,y-1) && walkable(x,y)) {	    		
+		    			walkMap[x][y-1] = 1;
+		    			walkMap[x][y] = 0;
+	    			} else if(walkable(x,y-1) && !walkable(x,y)) {
+	    				walkMap[x][y-1] = 0;
+		    			walkMap[x][y] = 1;
+	    			} else if(walkMap[x][y-1] <999 && walkable(x,y-1) && walkable(x,y)) {
+		    			walkMap[x][y] = walkMap[x][y-1]-1;
+	    			} else if(walkMap[x][y-1] <999 && !walkable(x,y-1) && !walkable(x,y)) {
+		    			walkMap[x][y] = walkMap[x][y-1]+1;
+	    			}
+	    		}
+	    	}
+	    } 	
+    	for(int x=game.mapWidth()-1; x>=0; x--) {
+	    	for(int y=game.mapHeight()-1; y>=0; y--) {
+	    		if(y<game.mapHeight()-1) {
+	    			if(walkMap[x][y] < 999) {
+		    			if(walkMap[x][y] > walkMap[x][y+1]+1) {	
+			    			walkMap[x][y] = walkMap[x][y+1]+1;
+		    			} else if(walkMap[x][y] < walkMap[x][y+1]-1) {
+		    				walkMap[x][y] = walkMap[x][y+1]-1;
+		    			}
+	    			} else {
+	    				if(walkMap[x][y+1] <1) {
+	    					walkMap[x][y] = walkMap[x][y+1]-1;	    					
+	    				} else {
+	    					walkMap[x][y] = walkMap[x][y+1]+1;
+	    				}
+	    			}
+	    		}
+	    	}
+    	}
+    	for(int x=0; x<game.mapWidth(); x++) {
+	    	for(int y=0; y<game.mapHeight(); y++) {
+	    		if(x>0) {
+	    			if(!walkable(x-1,y) && walkable(x,y)) {	    		
+		    			walkMap[x-1][y] = 1;
+		    			walkMap[x][y] = 0;
+	    			} else if(walkable(x-1,y) && !walkable(x,y)) {
+	    				walkMap[x-1][y] = 0;
+		    			walkMap[x][y] = 1;
+	    			}
+	    		}
+	    	}
+	    }
+    	for(int x=0; x<game.mapWidth(); x++) {
+	    	for(int y=0; y<game.mapHeight(); y++) {
+	    		if(x>0 && walkMap[x][y] != 0 && walkMap[x][y] != 1) {
+	    			if(walkMap[x][y] > walkMap[x-1][y]+1) {
+		    			walkMap[x][y] = walkMap[x-1][y]+1;
+	    			} else if(walkMap[x][y] < walkMap[x-1][y]-1) {
+		    			walkMap[x][y] = walkMap[x-1][y]-1;
+	    			}
+	    		}
+	    	}
+	    }   
+    	for(int x=game.mapWidth()-1; x>=0; x--) {
+	    	for(int y=game.mapHeight()-1; y>=0; y--) {		    	
+	    		if(x<game.mapWidth()-1 && walkMap[x][y] != 0 && walkMap[x][y] != 1) {
+	    			if(walkMap[x][y] > walkMap[x+1][y]+1) {
+		    			walkMap[x][y] = walkMap[x+1][y]+1;
+	    			} else if(walkMap[x][y] < walkMap[x+1][y]-1) {
+		    			walkMap[x][y] = walkMap[x+1][y]-1;
+	    			}
+	    		}
+	    	}
+    	}	    
+    }
+    
+    public boolean walkable(int x, int y) {
+    	boolean walkable = true;
+    	for(int dx=0;dx<4;dx++) {
+    		for(int dy=0;dy<4;dy++) {
+    			walkable &= game.isWalkable(x*4+dx, y*4+dy);
+    		}
+    	}
+    	return walkable;
+    }
+    
     @Override
     public void onFrame() {
     	try {
@@ -372,15 +464,16 @@ public class GuiBot extends DefaultBWListener {
         gasPerFrame = 0;
         
         //vision map time attenuation
-        for(int x=0; x<game.mapWidth(); x++) {
-        	for(int y=0; y<game.mapHeight(); y++) {
-        		if(game.isVisible(x, y)) {
-        			visionMap[x][y] = 0;
-        		} else {
-        			visionMap[x][y] ++;
-        		}
-        	}
-        }
+//        for(int x=0; x<game.mapWidth(); x++) {
+//        	for(int y=0; y<game.mapHeight(); y++) {
+//        		if(game.isVisible(x, y)) {
+//        			visionMap[x][y] = 0;
+//        		} else {
+//        			visionMap[x][y] ++;
+//        		}
+//        		game.drawTextMap(x*32,y*32,""+walkMap[x][y]);
+//        	}
+//        }
         
         //iterate through my units
         for (Unit myUnit : self.getUnits()) {        	
@@ -876,8 +969,9 @@ public class GuiBot extends DefaultBWListener {
         	if(likelyExpo == null) {
         		//after checking all explored bases, go back and check ones that aren't visible
             	for(BaseLocation b: BWTA.getBaseLocations()) {
-    	    		if(!(b.isIsland() && !myUnit.isFlying()) && !game.isVisible(b.getTilePosition()) && 
-    	    			(likelyExpo == null || b.getDistance(enemyMain.toPosition()) 
+    	    		if(!(b.isIsland() && !myUnit.isFlying()) && !game.isVisible(b.getTilePosition())  
+    	    			&& visionMap[b.getTilePosition().getX()][b.getTilePosition().getY()] > game.enemy().getRace().getCenter().buildTime()
+    	    			&& (likelyExpo == null || b.getDistance(enemyMain.toPosition()) 
     	    			< likelyExpo.getDistance(enemyMain.toPosition()))) {
     	    			
     	    			likelyExpo = b;
@@ -932,28 +1026,38 @@ public class GuiBot extends DefaultBWListener {
          		}
          	}
          	
+         	double mySize = Math.sqrt(Math.pow(myUnit.getType().width(),2) + Math.pow(myUnit.getType().height(),2))/2;
+         	double hisSize;
     		for(Unit hisUnit: myUnit.getUnitsInRadius(myUnit.getType().sightRange()+32)) {
 				if(hisUnit.getPlayer().equals(game.enemy())				
 					&& (!hisUnit.getType().isBuilding() || hisUnit.getType().canAttack() || hisUnit.getType() == UnitType.Terran_Bunker)) {
 					
-	    			if(myUnit.isFlying() && myUnit.isDetected() && !hisUnit.getType().airWeapon().equals(WeaponType.None)) {	
-	    				hisRange = game.enemy().weaponMaxRange(hisUnit.getType().airWeapon()) + 32;
+	    			if(myUnit.getType() == UnitType.Protoss_Corsair && !hisUnit.getType().airWeapon().equals(WeaponType.None)) {
+	    				hisSize = Math.sqrt(Math.pow(hisUnit.getType().width(),2) + Math.pow(hisUnit.getType().height(),2))/2;;
+	    				hisRange = game.enemy().weaponMaxRange(hisUnit.getType().airWeapon()) + hisSize + mySize;
 	    				d = myUnit.getPosition().getApproxDistance(hisUnit.getPosition());
-//	    				if(myUnit.getDistance(hisUnit) <= hisRange) {	    			
-	    					//potential function is 1/d^2
+	    				//potential function is 1/d^2
+	    				if(!hisUnit.isFlying()) {	    				
 	    					threatVector[0] += -2*scale*hisRange/d/d*(hisUnit.getX()-myUnit.getX());
 	    					threatVector[1] += -2*scale*hisRange/d/d*(hisUnit.getY()-myUnit.getY());
-//	    				} else {
-//	    					//potential function is 1/(d-hisRange)^2
-//	    					moveVector[0] += -4*scale/d/(d-hisRange)*(hisUnit.getX()-myUnit.getX());
-//	    					moveVector[1] += -4*scale/d/(d-hisRange)*(hisUnit.getY()-myUnit.getY());
-//	    				}	    				
-//	    				if(myUnit.getDistance(hisUnit) <= hisRange) {	  
-//	    					//if you're getting hurt bad, just retreat
-//	    					d = myUnit.getPosition().getApproxDistance(likelyExpo.getPosition());
-//	    					moveVector[0] += -3*scale*(likelyExpo.getX() - myUnit.getX())/d;
-//	    					moveVector[1] += -3*scale*(likelyExpo.getY() - myUnit.getY())/d;
-//	    				}
+	    				} else {
+	    					threatVector[0] += -1*scale*hisRange/d/d*(hisUnit.getX()-myUnit.getX());
+	    					threatVector[1] += -1*scale*hisRange/d/d*(hisUnit.getY()-myUnit.getY());
+	    				}
+	    			} else if(myUnit.getType() == UnitType.Protoss_Observer 
+	    				&& (!hisUnit.getType().airWeapon().equals(WeaponType.None) || hisUnit.getType().isDetector())) {	
+	    				
+	    				hisSize = Math.sqrt(Math.pow(hisUnit.getType().width(),2) + Math.pow(hisUnit.getType().height(),2))/2;	    				 
+	    				
+	    				if(hisUnit.getType().isDetector()) {
+	    					hisRange = hisUnit.getType().sightRange() + hisSize + mySize;
+		    				threatVector[0] += -2*scale*hisRange/d/d*(hisUnit.getX()-myUnit.getX());
+	    					threatVector[1] += -2*scale*hisRange/d/d*(hisUnit.getY()-myUnit.getY());
+	    				} else {
+	    					hisRange = game.enemy().weaponMaxRange(hisUnit.getType().airWeapon()) + hisSize + mySize;	  
+	    					threatVector[0] += -1*scale*hisRange/d/d*(hisUnit.getX()-myUnit.getX());
+	    					threatVector[1] += -1*scale*hisRange/d/d*(hisUnit.getY()-myUnit.getY());
+	    				}
 	    			} else if (myUnit.getType() == UnitType.Protoss_Probe && !hisUnit.getType().groundWeapon().equals(WeaponType.None)) {
 	    				gatherMinerals(myUnit, false);
 	    			}
@@ -1058,7 +1162,7 @@ public class GuiBot extends DefaultBWListener {
      */
     public double[] adjustForWalls(double[] v, Unit myUnit) {
     	double r = Math.sqrt(v[0]*v[0] + v[1]*v[1]);
-    	double margin = Math.max(myUnit.getType().width(), myUnit.getType().height())/2;
+    	double margin = Math.max(myUnit.getType().width(), myUnit.getType().height())/2.0;
     	double dx = 0;
     	double dy = 0;
     	if(myUnit.getX() + v[0] < margin) {
