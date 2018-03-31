@@ -228,12 +228,15 @@ public class GuiBot extends DefaultBWListener {
     				UnitType.Protoss_Pylon,
     				UnitType.Protoss_Gateway,
     				UnitType.Protoss_Assimilator,
-    				UnitType.Protoss_Cybernetics_Core,    				
-    				UnitType.Protoss_Zealot,
     				UnitType.Protoss_Pylon, 
-    				UnitType.Protoss_Zealot,
+    				UnitType.Protoss_Zealot,    
+    				UnitType.Protoss_Cybernetics_Core, 
+    				UnitType.Protoss_Zealot,    
     				UnitType.Protoss_Stargate,
-    				UnitType.Protoss_Zealot, 
+    				UnitType.Protoss_Zealot,
+    				UnitType.Protoss_Pylon,
+    				UnitType.Protoss_Zealot,
+    				UnitType.Protoss_Assimilator,
     				UnitType.Protoss_Robotics_Facility};
             
             saveForIndex = 0;
@@ -464,16 +467,16 @@ public class GuiBot extends DefaultBWListener {
         gasPerFrame = 0;
         
         //vision map time attenuation
-//        for(int x=0; x<game.mapWidth(); x++) {
-//        	for(int y=0; y<game.mapHeight(); y++) {
-//        		if(game.isVisible(x, y)) {
-//        			visionMap[x][y] = 0;
-//        		} else {
-//        			visionMap[x][y] ++;
-//        		}
+        for(int x=0; x<game.mapWidth(); x++) {
+        	for(int y=0; y<game.mapHeight(); y++) {
+        		if(game.isVisible(x, y)) {
+        			visionMap[x][y] = 0;
+        		} else {
+        			visionMap[x][y] ++;
+        		}
 //        		game.drawTextMap(x*32,y*32,""+walkMap[x][y]);
-//        	}
-//        }
+        	}
+        }
         
         //iterate through my units
         for (Unit myUnit : self.getUnits()) {        	
@@ -770,10 +773,10 @@ public class GuiBot extends DefaultBWListener {
     	UnitType nextBuilding = null;
     	
     	double pylonSupplyPerFrame = 0;
-    	pylonSupplyPerFrame = self.incompleteUnitCount(UnitType.Protoss_Pylon)*UnitType.Protoss_Pylon.supplyProvided()/(1.0*UnitType.Protoss_Pylon.buildTime())
-    			+ self.incompleteUnitCount(UnitType.Protoss_Nexus)*UnitType.Protoss_Nexus.supplyProvided()/(1.0*UnitType.Protoss_Nexus.buildTime());
+    	pylonSupplyPerFrame = self.incompleteUnitCount(UnitType.Protoss_Pylon)*UnitType.Protoss_Pylon.supplyProvided()/(1.0*UnitType.Protoss_Pylon.buildTime());
+//    			+ self.incompleteUnitCount(UnitType.Protoss_Nexus)*UnitType.Protoss_Nexus.supplyProvided()/(1.0*UnitType.Protoss_Nexus.buildTime());
     	
-    	if(pylonSupplyPerFrame <= supplyPerFrame && self.supplyUsed() >= self.supplyTotal() - 20 && self.supplyTotal() < 400) {
+    	if(pylonSupplyPerFrame <= supplyPerFrame && self.supplyUsed() >= self.supplyTotal() - 34 && self.supplyTotal() < 400) {
     		//don't get supply blocked
     		nextBuilding = UnitType.Protoss_Pylon;
     	} else if(self.allUnitCount(UnitType.Protoss_Assimilator) < self.completedUnitCount(UnitType.Protoss_Nexus)) {
@@ -1077,14 +1080,15 @@ public class GuiBot extends DefaultBWListener {
          	int clusterCount = 1;
     		
     		for(Unit u: self.getUnits()) {
-    			if(u.isCompleted() && u.getType() == myUnit.getType() && u.getID() != myUnit.getID()) {
-    				d = myUnit.getPosition().getApproxDistance(u.getPosition());
+    			if(u.isCompleted() && u.getType() == myUnit.getType() && u.getID() != myUnit.getID()) {    				
     				if(myUnit.getType() == UnitType.Protoss_Observer) {
+    					d = myUnit.getPosition().getApproxDistance(u.getPosition());
     					clusterVector[0] += -2*scale*myUnit.getType().sightRange()/d/d*(u.getX()-myUnit.getX());
     					clusterVector[1] += -2*scale*myUnit.getType().sightRange()/d/d*(u.getY()-myUnit.getY());
     				} else if(myUnit.getType() == UnitType.Protoss_Corsair) {
-    					clusterVector[0] += 0.2*scale/d*(u.getX()-myUnit.getX());
-    					clusterVector[1] += 0.2*scale/d*(u.getY()-myUnit.getY());
+    					d = myUnit.getPosition().getApproxDistance(u.getLastCommand().getTargetPosition());
+    					clusterVector[0] += 0.2*scale/d*(u.getLastCommand().getTargetPosition().getX()-myUnit.getX());
+    					clusterVector[1] += 0.2*scale/d*(u.getLastCommand().getTargetPosition().getY()-myUnit.getY());
     					if(d < scale) {
     						clusterCount++;
     					}
@@ -1126,7 +1130,6 @@ public class GuiBot extends DefaultBWListener {
 					}
 	    		}
     		}
-    		
     		if(myUnit.getType() == UnitType.Protoss_Probe) {   
     			myUnit.move(likelyExpo.getPosition()); 	
     		} else {  	
@@ -1312,9 +1315,9 @@ public class GuiBot extends DefaultBWListener {
 //    					else
 //    						myUnit.move(attackPosition);
     				} else if(myUnit.getLastCommand().getUnitCommandType() == UnitCommandType.Attack_Unit
-    					&& myUnit.getLastCommand().getTarget().exists()) {
+    					&& myUnit.getTarget() != null && myUnit.getTarget().exists()) {
     					//let attack finish
-    					game.drawTextMap(myUnit.getPosition(), myUnit.getLastCommand().getTarget() +"");
+    					game.drawTextMap(myUnit.getPosition(), myUnit.getTarget() +"");
     				} else if(closestGroundSquishy != null) {
     					if(myUnit.isInWeaponRange(closestGroundSquishy)) {
     						myUnit.attack(closestGroundSquishy);
@@ -1634,7 +1637,7 @@ public class GuiBot extends DefaultBWListener {
 	    					} else {
 	    						myUnit.move(self.getStartLocation().toPosition());
 	    					}
-		    				if(game.getUnitsOnTile(myUnit.getTilePosition()).size() > 3
+		    				if(game.getUnitsOnTile(myUnit.getTilePosition()).size() > 4 || self.completedUnitCount(UnitType.Protoss_Probe) <= 4
 		    					&& BWTA.getRegion(myUnit.getPosition()).equals(BWTA.getRegion(self.getStartLocation()))) {
 		    					
 		    					for(Unit n: game.getNeutralUnits()) {
@@ -2007,7 +2010,7 @@ public class GuiBot extends DefaultBWListener {
     /**build a building at the optimal time
      * returns true if build command was issued, else returns false 
     */
-    public boolean buildBuilding(UnitType building, int x, int y) {   
+    public boolean buildBuilding(UnitType building, int x, int y) throws NullPointerException {   
     	//decide where to put the building    	
     	TilePosition buildingLoc = new TilePosition(x,y);
     	
@@ -2019,12 +2022,12 @@ public class GuiBot extends DefaultBWListener {
     	double dist;
     	for (Unit myUnit : self.getUnits()) {
             //build buildings at the optimal time
-            if (myUnit.getType().isWorker() && !myUnit.isGatheringGas() && myUnit.isCompleted() && !match && !myUnit.equals(scoutingProbe) &&
-            	(game.canBuildHere(buildingLoc, building, myUnit, true) || !game.isVisible(buildingLoc))) {
+            if (myUnit.getType().isWorker() && !myUnit.isGatheringGas() && !match && myUnit.isCompleted() && !myUnit.equals(scoutingProbe)) {// &&
+//            	(game.canBuildHere(buildingLoc, building, myUnit, true) || !game.isVisible(buildingLoc))) {
             	
             	command = myUnit.getLastCommand();            
             	dist = myUnit.getPosition().getApproxDistance(buildingLoc.toPosition());
-            	if(myUnit.isConstructing() || command.getTargetTilePosition().equals(buildingLoc)) {
+            	if(command.getTargetPosition().equals(buildingLoc.toPosition())) {
             		//prevent multiple workers from building the same thing
             		closestWorker = myUnit;
             		shortestDist = dist;
@@ -2050,16 +2053,19 @@ public class GuiBot extends DefaultBWListener {
         			if(!game.isExplored(new TilePosition(buildingLoc.getX()+x, buildingLoc.getY()+y)))
         				fullyExplored = false;
         		}
-    		}
-    		if(game.canBuildHere(buildingLoc, building, closestWorker, true) && fullyExplored
-    			&& self.minerals() >= building.mineralPrice() && self.gas() >= building.gasPrice()) {     
+    		}    			
+    		if(closestWorker.getLastCommand().isQueued())
+				closestWorker.move(buildingLoc.toPosition(), false); 
+    		if(game.canBuildHere(buildingLoc, building, closestWorker, true) && fullyExplored //&& !closestWorker.getLastCommand().isQueued()
+    			&& self.minerals() >= building.mineralPrice() && self.gas() >= building.gasPrice()) {    
+
     			closestWorker.build(building, buildingLoc);
 //    			reservedMinerals += building.mineralPrice();
 //    			reservedGas += building.gasPrice();
     		} else {
-    			closestWorker.move(buildingLoc.toPosition());    			
+    			closestWorker.move(buildingLoc.toPosition(), false);    			
     		}
-    		game.drawTextMap(closestWorker.getPosition(), "Builder");
+    		game.drawTextMap(closestWorker.getPosition(), "builder");
     		return true;
     	} else {
     		return false;
