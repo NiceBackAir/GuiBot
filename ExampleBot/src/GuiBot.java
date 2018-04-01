@@ -629,11 +629,6 @@ public class GuiBot extends DefaultBWListener {
         	}
         }
         for (Unit myUnit : self.getUnits()) {
-            if (myUnit.getType() == UnitType.Protoss_Robotics_Support_Bay) {
-        		prepareUpgrade(myUnit, UpgradeType.Gravitic_Drive);
-        	}
-        }
-        for (Unit myUnit : self.getUnits()) {
             if (myUnit.getType() == UnitType.Protoss_Citadel_of_Adun) {
             	prepareUpgrade(myUnit, UpgradeType.Leg_Enhancements);
         	}
@@ -644,6 +639,16 @@ public class GuiBot extends DefaultBWListener {
             		prepareUpgrade(myUnit, TechType.Psionic_Storm);
             	else
             		prepareUpgrade(myUnit, UpgradeType.Khaydarin_Amulet);
+        	}
+        }
+        for (Unit myUnit : self.getUnits()) {
+            if (myUnit.getType() == UnitType.Protoss_Arbiter_Tribunal) {
+            	if(!self.hasResearched(TechType.Stasis_Field))
+            		prepareUpgrade(myUnit, TechType.Stasis_Field);
+            	else if(!self.hasResearched(TechType.Recall))
+            		prepareUpgrade(myUnit, TechType.Recall);
+            	else
+            		prepareUpgrade(myUnit, UpgradeType.Khaydarin_Core);
         	}
         }
         for (Unit myUnit : self.getUnits()) {
@@ -669,13 +674,14 @@ public class GuiBot extends DefaultBWListener {
         	}
         }
         for (Unit myUnit : self.getUnits()) {
-            if (myUnit.getType() == UnitType.Protoss_Arbiter_Tribunal) {
-            	if(!self.hasResearched(TechType.Stasis_Field))
-            		prepareUpgrade(myUnit, TechType.Stasis_Field);
-            	else if(!self.hasResearched(TechType.Recall))
-            		prepareUpgrade(myUnit, TechType.Recall);
-            	else
-            		prepareUpgrade(myUnit, UpgradeType.Khaydarin_Core);
+            if (myUnit.getType() == UnitType.Protoss_Robotics_Support_Bay) {
+        		prepareUpgrade(myUnit, UpgradeType.Gravitic_Drive);
+        	}
+        }
+        for (Unit myUnit : self.getUnits()) {
+            if (myUnit.getType() == UnitType.Protoss_Observatory) {
+            	if(self.allUnitCount(UnitType.Protoss_Observer) > 3)
+            		prepareUpgrade(myUnit, UpgradeType.Gravitic_Boosters);
         	}
         }
         for (Unit myUnit : self.getUnits()) {
@@ -724,15 +730,17 @@ public class GuiBot extends DefaultBWListener {
 	            			prepareUnit(myUnit, UnitType.Protoss_Zealot);
 	            		}
 	            	} else if(self.completedUnitCount(UnitType.Protoss_Templar_Archives) > 0 
-	            		&& self.allUnitCount(UnitType.Protoss_High_Templar) < 6 && canAfford(UnitType.Protoss_High_Templar)) {
+	            		&& (self.allUnitCount(UnitType.Protoss_High_Templar) < 6 || self.gas() > self.minerals() + 800) 
+	            		&& canAfford(UnitType.Protoss_High_Templar)) {
 	            		
 	            		prepareUnit(myUnit, UnitType.Protoss_High_Templar);
-	            	} else if(((game.enemy().getRace() == Race.Terran || game.enemy().getRace() == Race.Protoss)
+	            	} else if(self.minerals() < self.gas() + 800 
+	            		&& (((game.enemy().getRace() == Race.Terran || game.enemy().getRace() == Race.Protoss)
 	            		&& (self.completedUnitCount(UnitType.Protoss_Citadel_of_Adun) == 0 
 	            		^ self.allUnitCount(UnitType.Protoss_Dragoon) < self.allUnitCount(UnitType.Protoss_Zealot)))
 	            		|| ((game.enemy().allUnitCount(UnitType.Zerg_Lurker) > 0 || game.enemy().allUnitCount(UnitType.Zerg_Lurker_Egg) > 0
 	            		|| (game.enemy().allUnitCount(UnitType.Zerg_Hydralisk_Den) > 0 && game.enemy().allUnitCount(UnitType.Zerg_Lair) > 0))
-	            		&& self.allUnitCount(UnitType.Protoss_Dragoon) < self.allUnitCount(UnitType.Protoss_Zealot))) {
+	            		&& self.allUnitCount(UnitType.Protoss_Dragoon) < self.allUnitCount(UnitType.Protoss_Zealot)))) {
 	            		//translation: if enemy is T or P and my citadel is finished, or if enemy has lurker tech, start making equal numbers
 	            		//of goons and zlots
 	            		
@@ -744,12 +752,6 @@ public class GuiBot extends DefaultBWListener {
             		supplyPerFrame += UnitType.Protoss_Zealot.supplyRequired()*1f/UnitType.Protoss_Zealot.buildTime();
             	}
             }     
-        }
-        for (Unit myUnit : self.getUnits()) {
-            if (myUnit.getType() == UnitType.Protoss_Observatory) {
-            	if(self.allUnitCount(UnitType.Protoss_Observer) > 3)
-            		prepareUpgrade(myUnit, UpgradeType.Gravitic_Boosters);
-        	}
         }
         game.drawTextScreen(250, 0, "Reserved Minerals: " + reservedMinerals);
         game.drawTextScreen(250, 15, "Reserved Gas: " + reservedGas);
@@ -909,7 +911,7 @@ public class GuiBot extends DefaultBWListener {
     		nextBuilding = UnitType.Protoss_Robotics_Support_Bay; 		
     	} else if(self.allUnitCount(UnitType.Protoss_Forge) == 0) {
     		nextBuilding = UnitType.Protoss_Forge;    		
-    	} else if(self.allUnitCount(UnitType.Protoss_Nexus) <3) {
+    	} else if(self.allUnitCount(UnitType.Protoss_Nexus) < 3) {
     		nextBuilding = UnitType.Protoss_Nexus;    		
     	} else if(self.allUnitCount(UnitType.Protoss_Citadel_of_Adun) == 0 
     		&& self.completedUnitCount(UnitType.Protoss_Cybernetics_Core) > 0) {
@@ -919,11 +921,8 @@ public class GuiBot extends DefaultBWListener {
     		&& self.completedUnitCount(UnitType.Protoss_Citadel_of_Adun) > 0) {
     		
     		nextBuilding = UnitType.Protoss_Templar_Archives;    		
-    	} else if(self.allUnitCount(UnitType.Protoss_Stargate) == 0
-    		&& self.completedUnitCount(UnitType.Protoss_Cybernetics_Core) > 0
-    		&& self.completedUnitCount(UnitType.Protoss_Templar_Archives) > 0) {
-    		
-    		nextBuilding = UnitType.Protoss_Stargate;    		
+    	} else if(self.allUnitCount(UnitType.Protoss_Nexus) < 3) {
+    		nextBuilding = UnitType.Protoss_Nexus;   		
     	} else if(self.allUnitCount(UnitType.Protoss_Templar_Archives) > 0 
     		&& self.allUnitCount(UnitType.Protoss_Gateway) < self.allUnitCount(UnitType.Protoss_Nexus)*3 ) {
     		nextBuilding = UnitType.Protoss_Gateway;        		
@@ -1426,7 +1425,7 @@ public class GuiBot extends DefaultBWListener {
         	weakestAirEnemy = null;
     		if(myUnit.isCompleted() && !myUnit.getType().isBuilding()) {// && !myUnit.getType().isWorker()) {
 				for(Unit hisUnit: myUnit.getUnitsInRadius(myUnit.getType().sightRange())) { 				
-					if(hisUnit.getPlayer().equals(game.enemy()) && hisUnit.isVisible(self) && !hisUnit.isInvincible() 					
+					if(hisUnit.getPlayer().equals(game.enemy()) && hisUnit.isVisible(self) && hisUnit.isDetected() && !hisUnit.isInvincible() 					
 						&& (!hisUnit.getType().isBuilding() || hisUnit.getType().canAttack() || hisUnit.getType() == UnitType.Terran_Bunker)
 						&& hisUnit.getType() != UnitType.Zerg_Larva && hisUnit.getType() != UnitType.Zerg_Egg) {
 						
