@@ -1,3 +1,6 @@
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -65,6 +68,9 @@ public class GuiBot extends DefaultBWListener {
     private double[][] gtaDangerMap;
     private double[][] walkMap;
     
+    //output files
+	BufferedWriter writer;
+    
     public void run() {
         mirror.getModule().setEventListener(this);
         mirror.startGame();
@@ -101,6 +107,14 @@ public class GuiBot extends DefaultBWListener {
 	        	game.sendText("Build completed in: " + game.elapsedTime() + " seconds.");
 	        }
 		} catch (Exception e) {
+			try {
+				writer = new BufferedWriter(new FileWriter("bwapi-data/write/exceptions.txt", true));
+				writer.append(e.getLocalizedMessage() + "\r\n");
+			} catch (IOException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+			
 			e.printStackTrace(System.out);
 		}
     }
@@ -109,7 +123,7 @@ public class GuiBot extends DefaultBWListener {
     public void onUnitDestroy(Unit unit) { 
     	//scouting probes keep suiciding for now
     	try {
-	    	if(unit.getID() == scoutingProbe.getID()) {
+	    	if(scoutingProbe != null && unit.getID() == scoutingProbe.getID()) {
 	    		Unit p = null;
 	    		for(Unit u: self.getUnits()) {
 	    			if(u.getType() == UnitType.Protoss_Probe && (p == null 
@@ -121,6 +135,13 @@ public class GuiBot extends DefaultBWListener {
 	    		scoutingProbe = p;
 	    	}
     	} catch (Exception e) {
+			try {
+				writer = new BufferedWriter(new FileWriter("bwapi-data/write/exceptions.txt", true));
+				writer.append(e.getLocalizedMessage() + "\r\n");
+			} catch (IOException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}			
     		e.printStackTrace(System.out);
     	}
     }
@@ -131,6 +152,12 @@ public class GuiBot extends DefaultBWListener {
     
     @Override
     public void onStart() {    	
+    	try {
+			writer = new BufferedWriter(new FileWriter("bwapi-data/write/exceptions.txt", true));
+		} catch (IOException e) {
+			// TODO Auto-generated catch blocks
+			e.printStackTrace();
+		}    	
         game = mirror.getGame();
         self = game.self();
 
@@ -357,6 +384,7 @@ public class GuiBot extends DefaultBWListener {
     @Override
     public void onFrame() {
     	try {
+    		long frameLength = System.currentTimeMillis();
     		game.drawCircleMap(natural.getPoint(), 3, Color.Red);
     		if(naturalChoke != null)
     			game.drawLineMap(naturalChoke.getSides().first, naturalChoke.getSides().second, Color.Red);
@@ -455,8 +483,22 @@ public class GuiBot extends DefaultBWListener {
 	        	game.drawTextScreen(250, 30, "Next Item: " + BOProgress + " " + nextItem.toString());
 	        else
 	        	game.drawTextScreen(250, 30, "Next Item: -----");
+	        
+	        frameLength = System.currentTimeMillis()-frameLength;
+	        if(frameLength >= 85) {
+		        writer = new BufferedWriter(new FileWriter("bwapi-data/write/exceptions.txt", true));
+		        writer.append(""+frameLength+ "\r\n");
+		        writer.close();
+	        }
     	} catch (Exception e) {
     		e.printStackTrace(System.out);
+    		try {
+    			writer = new BufferedWriter(new FileWriter("bwapi-data/write/exceptions.txt", true));
+    			writer.append(e.getLocalizedMessage() + "\r\n");
+    			writer.close();
+    		} catch(IOException IOE) {
+    			IOE.printStackTrace(System.out);
+    		}
     	}
     }    
     /** Keeps track of your own units, income, and BO completion progress
@@ -591,7 +633,7 @@ public class GuiBot extends DefaultBWListener {
     /** Train units and research tech and upgrades. The buildings are sorted by priority order.
      * 
      */
-    public void trainAndResearch () {
+    public void trainAndResearch() throws Exception {
         for (Unit myUnit : self.getUnits()) {
             //if there's enough minerals, train a probe
             if (myUnit.getType() == UnitType.Protoss_Nexus && myUnit.isCompleted()
@@ -1121,7 +1163,7 @@ public class GuiBot extends DefaultBWListener {
     /** Find the enemy main and scout with probe
      * 
      */
-    public void scout(Unit myUnit) {
+    public void scout(Unit myUnit) throws Exception {
     	if(enemyMain == null) {
 	    	TilePosition farthestMain = null;
 	    	for(TilePosition t: game.getStartLocations()) {
@@ -1184,7 +1226,7 @@ public class GuiBot extends DefaultBWListener {
          				//walkable uses mini-tiles
          				//if(game.isWalkable(x/8, y/8)) {
          					Position cornerPos = new Position(x,y);
-         					game.drawCircleMap(x, y, (int) scale + 32, Color.Red);
+//         					game.drawCircleMap(x, y, (int) scale + 32, Color.Red);
          					d = cornerPos.getApproxDistance(myUnit.getPosition());
          					double rectDist = Math.abs(x-myUnit.getX()) + Math.abs(y-myUnit.getY());
 	    					terrainVector[0] += -4*scale/d/rectDist*(x-myUnit.getX());
@@ -1238,14 +1280,21 @@ public class GuiBot extends DefaultBWListener {
 	    				myRange = self.weaponMaxRange(myUnit.getType().airWeapon());
     					targetVector[0] += 2*scale*myRange/d/d*(hisUnit.getX()-myUnit.getX());
     					targetVector[1] += 2*scale*myRange/d/d*(hisUnit.getY()-myUnit.getY());
-	    			} else if(myUnit.getType() == UnitType.Protoss_Observer && hisUnit.isCompleted()
+	    			}
+				}
+    		}	
+    		
+    		//observers have global priority to detect
+    		if(myUnit.getType() == UnitType.Protoss_Observer) {
+        		for(Unit hisUnit: game.enemy().getUnits()) {		
+					if(hisUnit.isCompleted()
 	    				&& (hisUnit.isVisible() && !hisUnit.isDetected() || hisUnit.getType() == UnitType.Zerg_Lurker)) {
     					targetVector[0] += 3*scale/d*(hisUnit.getX()-myUnit.getX());
     					targetVector[1] += 3*scale/d*(hisUnit.getY()-myUnit.getY());
-					}    	
-				}
-    		}	
-    	
+					} 
+        		}	
+    		}
+    		
          	int hitsToKillHim;
          	Unit weakestAirEnemy = null;
          	int leastHits = 9999;       
@@ -1317,13 +1366,13 @@ public class GuiBot extends DefaultBWListener {
 	    	if(!hasCommand) {
 				if(weakestAirEnemy != null && myUnit.getAirWeaponCooldown() == 0) {   	
 					myUnit.attack(weakestAirEnemy);
-					game.drawLineMap(myUnit.getX(), myUnit.getY(), weakestAirEnemy.getX(), weakestAirEnemy.getY(), Color.Red);
+//					game.drawLineMap(myUnit.getX(), myUnit.getY(), weakestAirEnemy.getX(), weakestAirEnemy.getY(), Color.Red);
 				} else if(weakestAirEnemy != null && myUnit.getAirWeaponCooldown() != 0 && !kiteForward) {
 					myUnit.rightClick(weakestAirEnemy);
-					game.drawLineMap(myUnit.getX(), myUnit.getY(), weakestAirEnemy.getX(), weakestAirEnemy.getY(), Color.Red);
+//					game.drawLineMap(myUnit.getX(), myUnit.getY(), weakestAirEnemy.getX(), weakestAirEnemy.getY(), Color.Red);
 				} else {
 					myUnit.move(new Position(myUnit.getX()+(int)moveVector[0], myUnit.getY()+(int)moveVector[1]));
-					game.drawLineMap(myUnit.getX(), myUnit.getY(), myUnit.getX()+(int)moveVector[0], myUnit.getY()+(int)moveVector[1], Color.Green);
+//					game.drawLineMap(myUnit.getX(), myUnit.getY(), myUnit.getX()+(int)moveVector[0], myUnit.getY()+(int)moveVector[1], Color.Green);
 				}      	
 	    	}
     	}
@@ -1395,7 +1444,7 @@ public class GuiBot extends DefaultBWListener {
     /** Micro army to optimize army value and gather at certain locations
      * 
      */
-    public void controlArmy() {
+    public void controlArmy() throws Exception {
     	//default attack position if you can't see anything    	
 	    
     	game.drawLineMap(new Position(attackPosition.getX() - 5,  attackPosition.getY() - 5), 
@@ -1508,9 +1557,9 @@ public class GuiBot extends DefaultBWListener {
 	    					//}
 	    				} else {
 	    					//issue no commands in order to go through with attack
-	    					game.drawLineMap(myUnit.getPosition(), closestEnemy.getPosition(), Color.Yellow);
+//	    					game.drawLineMap(myUnit.getPosition(), closestEnemy.getPosition(), Color.Yellow);
 	    				}
-	    				game.drawTextMap(myUnit.getPosition(), myUnit.getGroundWeaponCooldown()+"");
+//	    				game.drawTextMap(myUnit.getPosition(), myUnit.getGroundWeaponCooldown()+"");
 //	    			} else if(myUnit.isUnderAttack() || myUnit.isUnderDisruptionWeb() || myUnit.isUnderStorm()) {
 //	    				game.sendText("hi");
 //	    				myUnit.move(self.getStartLocation().toPosition());
@@ -1530,7 +1579,7 @@ public class GuiBot extends DefaultBWListener {
     				} else if(myUnit.getLastCommand().getUnitCommandType() == UnitCommandType.Attack_Unit
     					&& myUnit.getTarget() != null && myUnit.getTarget().exists()) {
     					//let attack finish
-    					game.drawTextMap(myUnit.getPosition(), myUnit.getTarget() +"");
+//    					game.drawTextMap(myUnit.getPosition(), myUnit.getTarget() +"");
     				} else if(closestGroundSquishy != null) {
     					if(myUnit.isInWeaponRange(closestGroundSquishy)) {
     						myUnit.attack(closestGroundSquishy);
@@ -1719,7 +1768,7 @@ public class GuiBot extends DefaultBWListener {
 	    			if(self.minerals() >=25) {//canAfford(UnitType.Protoss_Scarab)) {
 	    				myUnit.train(UnitType.Protoss_Scarab);
 	    			}
-	    			game.drawTextMap(myUnit.getPosition(), myUnit.getGroundWeaponCooldown()+"");
+//	    			game.drawTextMap(myUnit.getPosition(), myUnit.getGroundWeaponCooldown()+"");
 	    			
 	    		} else if(myUnit.getType() == UnitType.Protoss_Corsair) {  	    			
 	    			scout(myUnit);
@@ -1808,7 +1857,7 @@ public class GuiBot extends DefaultBWListener {
 		    				myUnit.move(attackPosition);
 		    			}
 	    			}
-	    			game.drawTextMap(myUnit.getPosition(), myUnit.getSpellCooldown()+"");
+//	    			game.drawTextMap(myUnit.getPosition(), myUnit.getSpellCooldown()+"");
 	    		} else if(myUnit.getType() == UnitType.Protoss_Probe && myUnit != scoutingProbe) {
 	    			if(closestEnemy != null && (!closestEnemy.getType().groundWeapon().equals(WeaponType.None) || closestEnemy.getType().isSpellcaster()
 	    				|| closestEnemy.getType() == UnitType.Terran_Dropship || closestEnemy.getType() == UnitType.Protoss_Shuttle)) {	    				
@@ -1905,7 +1954,7 @@ public class GuiBot extends DefaultBWListener {
 		        									, nextTile.toPosition().getY() + nextItem.tileHeight()*16);		        		
 		        		
 	            		if(shouldBuildHere(nextItem, nextTile, closestChoke, bestPosition)) {
-	            			game.drawCircleMap(nextTile.toPosition(), 3, Color.Green);
+//	            			game.drawCircleMap(nextTile.toPosition(), 3, Color.Green);
 		            		bestTile = nextTile;
 		        			bestPosition = buildingCenter;
 	            		}
@@ -1921,14 +1970,14 @@ public class GuiBot extends DefaultBWListener {
 		            	if((int) Math.abs(p2.getX() - p1.getX()) > 10 || (int) Math.abs(p2.getY() - p1.getY()) > 6) {
 		            		//use pylon as part of the wall-off if the choke is long
 		            		if(shouldBuildHere(nextItem, nextTile, closestChoke, bestPosition)) {
-		            			game.drawCircleMap(nextTile.toPosition(), 3, Color.Green);
+//		            			game.drawCircleMap(nextTile.toPosition(), 3, Color.Green);
 			            		bestTile = nextTile;
 			        			bestPosition = buildingCenter;
 		            		}
 		            	} else {
 		            		// build pylon farther back if choke is short
 		            		if(shouldBuildHere(nextItem, nextTile, natural.getPosition(), bestPosition)) {
-		            			game.drawCircleMap(nextTile.toPosition(), 3, Color.Green);
+//		            			game.drawCircleMap(nextTile.toPosition(), 3, Color.Green);
 			            		bestTile = nextTile;
 			        			bestPosition = buildingCenter;
 		            		}
@@ -1945,7 +1994,7 @@ public class GuiBot extends DefaultBWListener {
 		        		
 		        		if(intersects(nextItem, nextTile, naturalChoke.getSides().first, naturalChoke.getSides().second)) {				        			
 		            		if(shouldBuildHere(nextItem, nextTile, closestChoke, bestPosition)) {
-		            			game.drawCircleMap(nextTile.toPosition(), 3, Color.Green);
+//		            			game.drawCircleMap(nextTile.toPosition(), 3, Color.Green);
 			            		bestTile = nextTile;
 			        			bestPosition = buildingCenter;
 		            		}
