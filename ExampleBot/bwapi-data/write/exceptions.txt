@@ -1,21 +1,17 @@
-vs Shelak Tribe (Protoss) on(2)Benzene.scx
-161
-vs Atlas Wing (Terran) on(2)Benzene.scx
-vs Mar Sara (Terran) on(2)Benzene.scx
+vs Surtur Brood (null) on(2)Benzene.scx
+157
+vs Grendel Brood (null) on(2)Benzene.scx
+155
+vs Jormungand Brood (null) on(2)Benzene.scx
+155
+vs Jormungand Brood (Unknown) on(2)Benzene.scx
+vs Jormungand Brood (Unknown) on(2)Benzene.scx
+vs Ara Tribe (null) on(2)Benzene.scx
 null
-vs Sargas Tribe (Unknown) on(2)Benzene.scx
-vs Sargas Tribe (Protoss) on(2)Benzene.scx
 null
-vs Sargas Tribe (Protoss) on(2)Benzene.scx
-vs Shelak Tribe (Protoss) on(2)Benzene.scx
 null
-vs Furinax Tribe (Unknown) on(2)Benzene.scx
 null
-vs Grendel Brood (Unknown) on(2)Benzene.scx
-vs Sargas Tribe (Protoss) on(2)Benzene.scx
 null
-vs Shelak Tribe (Protoss) on(2)Benzene.scx
-vs Ara Tribe (Protoss) on(2)Benzene.scx
 null
 null
 null
@@ -32,7 +28,6 @@ null
 null
 null
 null
-vs Venatir Tribe (Protoss) on(2)Benzene.scx
 null
 null
 null
@@ -49,7 +44,6 @@ null
 null
 null
 null
-vs Furinax Tribe (Protoss) on(2)Benzene.scx
 null
 null
 null
@@ -66,7 +60,6 @@ null
 null
 null
 null
-vs Kel-Morian Combine (Unknown) on(2)Benzene.scx
 null
 null
 null
@@ -83,7 +76,6 @@ null
 null
 null
 null
-vs Antiga (Unknown) on(2)Benzene.scx
 null
 null
 null
@@ -100,7 +92,6 @@ null
 null
 null
 null
-vs Cronus Wing (Unknown) on(2)Benzene.scx
 null
 null
 null
@@ -117,7 +108,6 @@ null
 null
 null
 null
-vs Akilae Tribe (Protoss) on(2)Benzene.scx
 null
 null
 null
@@ -134,16 +124,234 @@ null
 null
 null
 null
-vs Ara Tribe (Unknown) on(2)Benzene.scx
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+vs Furinax Tribe (null) on(2)Benzene.scx
+158
+vs Elite Guard (null) on(2)Benzene.scx
 159
-vs Garm Brood (Unknown) on(2)Benzene.scx
-vs Tiamat Brood (Unknown) on(2)Benzene.scx
-vs Tiamat Brood (Zerg) on(2)Benzene.scx
-vs Fenris Brood (Zerg) on(2)Benzene.scx
-vs Antiga (Terran) on(2)Benzene.scx
-vs Atlas Wing (Terran) on(2)Benzene.scx
-vs Sargas Tribe (Protoss) on(2)Benzene.scx
-vs Shelak Tribe (Protoss) on(2)Benzene.scx
-vs Garm Brood (Zerg) on(4)La Mancha1.1.scx
-vs Ara Tribe (Protoss) on(4)La Mancha1.1.scx
-vs Furinax Tribe (Protoss) on(4)La Mancha1.1.scx
+vs Sargas Tribe (null) on(2)Benzene.scx
+159
+vs Antiga (null) on(2)Benzene.scx
+166
+vs Baelrog Brood (null) on(2)Benzene.scx
+160
+vs Tiamat Brood (null) on(2)Benzene.scx
+156
+vs Surtur Brood (Zerg) on(2)Benzene.scx
+vs Leviathan Brood (Zerg) on(2)Benzene.scx
+vs Jormungand Brood (Zerg) on(2)Benzene.scx
+vs Kel-Morian Combine (Terran) on(2)Benzene.scx
+152
+vs Elite Guard (Unknown) on(2)Benzene.scx
+150
+vs Atlas Wing (Unknown) on(2)Benzene.scx
+vs Epsilon Squadron (Unknown) on(2)Benzene.scx
