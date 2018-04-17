@@ -21,7 +21,7 @@ import bwta.BWTA;
 import bwta.BaseLocation;
 import bwta.Chokepoint;
 
-public class MyUnit extends PositionedObject{
+public class MyUnit extends PositionedObject {
 	private Unit u;
 	private boolean isHovering = false;
 	private boolean isBuilding = false;

@@ -1,7 +1,7 @@
 import java.io.BufferedWriter;
 import java.io.FileWriter;
-import java.io.IOException;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 
 import bwapi.Color;
@@ -32,8 +32,9 @@ public class GuiBot extends DefaultBWListener {
     private Player self;
     private Race enemyRace;
     private HashMap<UnitType, Integer> enemyBuildingTab;
-    private HashMap<UnitType, Integer> enemyConstructionTab;
-    private HashMap<Unit, Position> enemyBuildingMap;
+    private HashMap<UnitType, Integer> enemyCompletedBuildingTab;
+    private HashMap<UpgradeType, Integer> enemyUpgradeTab;
+    private HashMap<Integer, HisUnit> enemyBuildings;
     
     private Chokepoint defenseChoke;
     private Chokepoint mainChoke;
@@ -88,19 +89,8 @@ public class GuiBot extends DefaultBWListener {
     	//update enemy building info
     	try {
 	    	if(game.getFrameCount() > 0) {
-		    	if((unit.getType().isBuilding() || unit.getType() == UnitType.Terran_Siege_Tank_Siege_Mode) && unit.getPlayer() == game.enemy()) {    		
-		    		if(unit.isCompleted()) {
-		    			if(enemyBuildingTab.containsKey(unit.getType()))
-		    				enemyBuildingTab.put(unit.getType(), enemyBuildingTab.get(unit.getType()));
-		    			else
-		    				enemyBuildingTab.put(unit.getType(), 1);
-		    		} else {
-		    			if(enemyConstructionTab.containsKey(unit.getType()))
-		    				enemyConstructionTab.put(unit.getType(), enemyConstructionTab.get(unit.getType()));
-		    			else
-		    				enemyConstructionTab.put(unit.getType(), 1);
-		    		}
-		    		enemyBuildingMap.put(unit, unit.getPosition());
+		    	if((unit.getType().isBuilding() || unit.getType() == UnitType.Terran_Siege_Tank_Siege_Mode) && unit.getPlayer() == game.enemy()) {    	
+		    		enemyBuildings.put(unit.getID(), new HisUnit(unit));
 		    	}
 		    	//change race away from random
 		    	if(unit.getPlayer().equals(game.enemy()) && game.enemy().getRace() == Race.Unknown) {
@@ -124,16 +114,8 @@ public class GuiBot extends DefaultBWListener {
     public void onUnitDestroy(Unit unit) { 
     	try {
     		//update building info
-        	if((unit.getType().isBuilding() || unit.getType() == UnitType.Terran_Siege_Tank_Siege_Mode) && unit.getPlayer() == game.enemy()) {    		
-        		if(unit.isCompleted()) {
-        			if(enemyBuildingTab.containsKey(unit.getType()))
-        				enemyBuildingTab.remove(unit.getType());
-        		} else {
-        			if(enemyConstructionTab.containsKey(unit.getType()))
-        				enemyConstructionTab.remove(unit.getType());
-        		}
-        		if(enemyBuildingMap.containsKey(unit))
-        			enemyBuildingMap.remove(unit);
+        	if(enemyBuildings.containsKey(unit.getID())) {    		
+        		enemyBuildings.remove(unit.getID());
         	}
     		
     		//crown a new bisu probe scout
@@ -158,6 +140,13 @@ public class GuiBot extends DefaultBWListener {
 				e1.printStackTrace();
 			}			
     		e.printStackTrace(System.out);
+    	}
+    }
+    
+    @Override
+    public void onUnitMorph(Unit unit) {
+    	if((unit.getType().isBuilding() || unit.getType() == UnitType.Terran_Siege_Tank_Siege_Mode) && unit.getPlayer() == game.enemy()) {    	
+    		enemyBuildings.put(unit.getID(), new HisUnit(unit));
     	}
     }
     
@@ -237,8 +226,9 @@ public class GuiBot extends DefaultBWListener {
         
         //initialize everything
         enemyBuildingTab = new HashMap<UnitType,Integer>();
-        enemyConstructionTab = new HashMap<UnitType,Integer>();
-        enemyBuildingMap = new HashMap<Unit,Position>();
+        enemyCompletedBuildingTab = new HashMap<UnitType, Integer>();
+        enemyUpgradeTab = new HashMap<UpgradeType, Integer>();
+        enemyBuildings = new HashMap<Integer, HisUnit>();
         
         nextItem = null;
         nextItemX = 0;
@@ -259,14 +249,7 @@ public class GuiBot extends DefaultBWListener {
         mainChoke = null;
         naturalChoke = null;
         natural = null;
-//        int i = 0;
         for(BaseLocation baseLocation : BWTA.getBaseLocations()){
-//        	System.out.println("Base location #" + (++i) + ". Printing location's region polygon:");
-//        	for(Position position : baseLocation.getRegion().getPolygon().getPoints()){
-//        		System.out.print(position + ", ");
-//        	}
-//        	System.out.println();
-        	
         	if(!baseLocation.getPosition().equals(BWTA.getStartLocation(self).getPosition()) && !baseLocation.isMineralOnly() 
         		&& !baseLocation.isIsland() && (natural == null
         		|| baseLocation.getGroundDistance(BWTA.getStartLocation(self)) < natural.getGroundDistance(BWTA.getStartLocation(self)))) {
@@ -656,21 +639,17 @@ public class GuiBot extends DefaultBWListener {
 //        	BODisplay += selectedBO[i].toString() + ": " + BOChecklist[i] + "\n";
 //        }
 //        game.drawTextScreen(10, 30, BODisplay);
-        
-        String enemyInfo = "";
-        for(UnitType t: enemyBuildingTab.keySet()) {
-        	enemyInfo += t + ": " + enemyBuildingTab.get(t) + "\n";
-        }
-        game.drawTextScreen(10, 30, enemyInfo);
-        
+                
         //game.drawTextScreen(250, 15, "Minerals Per Frame: " + mineralsPerFrame);
         //draw my units on screen
         attackPosition = null;
         airAttackPosition = null;
         //now for enemy units
         for (Unit hisUnit: game.enemy().getUnits()) {
+        	if(enemyBuildings.containsKey(hisUnit.getID())) {
+        		enemyBuildings.get(hisUnit.getID()).update();
+        	}
         	if(hisUnit.isVisible()) {
-        		game.drawTextMap(hisUnit.getPosition(), ""+hisUnit.getID());
 	        	//for some reason, the game remembers enemy positions from past games, so gotta check if explored
 	        	if (game.isExplored(hisUnit.getTilePosition()) && hisUnit.getType().isResourceDepot()) {
 	        		for(TilePosition t: game.getStartLocations()) {
@@ -696,16 +675,59 @@ public class GuiBot extends DefaultBWListener {
 	        	}
         	}
         }
+        
+        
+        enemyBuildingTab.clear();
+        HisUnit u;
+        for(int i: enemyBuildings.keySet()) {
+        	u = enemyBuildings.get(i);
+        	if(u.isCompleted()) {
+        		game.drawBoxMap(u.getX()-u.getType().width()/2, u.getY()-u.getType().height()/2,
+        				u.getX()+u.getType().width()/2, u.getY()+u.getType().height()/2, Color.Orange);
+        		//count completed buildings
+        		if(enemyCompletedBuildingTab.containsKey(u.getType()))
+        			enemyCompletedBuildingTab.put(u.getType(), enemyCompletedBuildingTab.get(u.getType())+1);
+        		else
+        			enemyCompletedBuildingTab.put(u.getType(), 1);
+        	} else {
+        		game.drawBoxMap(u.getX()-u.getType().width()/2, u.getY()-u.getType().height()/2,
+        				u.getX()+u.getType().width()/2, u.getY()+u.getType().height()/2, Color.Brown);
+        		//construction progress bar
+        		game.drawBoxMap(u.getX()-u.getType().width()/2, u.getY()-u.getType().height()/2+1,
+        				u.getX()-u.getType().width()/2+(u.getType().width()*(u.getType().buildTime()-u.getRemainingBuildTime()))/u.getType().buildTime(), 
+        				u.getY()-u.getType().height()/2+4, Color.Brown);
+        	}
+        	//count all buildings
+    		if(enemyBuildingTab.containsKey(u.getType()))
+    			enemyBuildingTab.put(u.getType(), enemyBuildingTab.get(u.getType())+1);
+    		else
+    			enemyBuildingTab.put(u.getType(), 1);
+        }
+        //enemy intel update
+        String enemyInfo = "";
+        for(UnitType t: enemyBuildingTab.keySet()) {
+        	enemyInfo += t + ": " + enemyBuildingTab.get(t) + "\n";
+        }
+        game.drawTextScreen(10, 30, enemyInfo);
+        
         if(attackPosition == null) {
         	//if no units to attack, go for buildings
-	        for(Unit hisUnit: game.enemy().getUnits()) {
-	        	if(hisUnit.exists() && hisUnit.getType() != UnitType.Zerg_Larva && hisUnit.getType() != UnitType.Zerg_Egg
-	        		&& (attackPosition == null || hisUnit.getPosition().getApproxDistance(self.getStartLocation().toPosition()) 
+	        for(int i: enemyBuildings.keySet()) {
+	        	u = enemyBuildings.get(i);
+	        	if ((attackPosition == null || u.getPosition().getApproxDistance(self.getStartLocation().toPosition()) 
 	        		< attackPosition.getApproxDistance(self.getStartLocation().toPosition()))) {
 	        		
-	        		attackPosition = hisUnit.getPosition();
+	        		attackPosition = u.getPosition();
 	        	}
-	        }   
+	        }  
+//	        for(Unit hisUnit: game.enemy().getUnits()) {
+//	        	if(hisUnit.exists() && hisUnit.getType() != UnitType.Zerg_Larva && hisUnit.getType() != UnitType.Zerg_Egg
+//	        		&& (attackPosition == null || hisUnit.getPosition().getApproxDistance(self.getStartLocation().toPosition()) 
+//	        		< attackPosition.getApproxDistance(self.getStartLocation().toPosition()))) {
+//	        		
+//	        		attackPosition = hisUnit.getPosition();
+//	        	}
+//	        }   
         }
     	if(attackPosition == null) {
     		//if no buildings to attack, go to default main
