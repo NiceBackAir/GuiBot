@@ -9,12 +9,22 @@ public class HisUnit extends PositionedObject {
 	private boolean isCompleted;
 	private int groundWeaponCooldown;
 	private int airWeaponCooldown;
+	private UpgradeType currentUpgrade;
+	private TechType currentTech;
 	
 	//constructor blob
 	public HisUnit() {
 		super();
 		u = null;
-		type = null;
+		type = UnitType.Unknown;
+		currentUpgrade = null;
+		currentTech = null;
+		remainingBuildTime = 0;
+		lastPosition = null;
+		timeSinceVisible = 0;
+		isCompleted = false;
+		groundWeaponCooldown = 0;
+		airWeaponCooldown = 0;
 	}	
 	public HisUnit(Unit hisUnit) {
 		u = hisUnit;
@@ -26,7 +36,8 @@ public class HisUnit extends PositionedObject {
 			remainingBuildTime = 0;
 		} else {
 			isCompleted = false;
-			remainingBuildTime = (hisUnit.getType().buildTime()*(hisUnit.getType().maxHitPoints()-hisUnit.getHitPoints()))/hisUnit.getType().maxHitPoints();
+			if(hisUnit.getType().isBuilding())
+				remainingBuildTime = (hisUnit.getType().buildTime()*(hisUnit.getType().maxHitPoints()-hisUnit.getHitPoints()))/hisUnit.getType().maxHitPoints();
 		}
 	}
 	
@@ -42,6 +53,12 @@ public class HisUnit extends PositionedObject {
 			airWeaponCooldown = u.getAirWeaponCooldown();
 			if(u.isMorphing()) {
 				remainingBuildTime = (u.getType().buildTime()*(u.getType().maxHitPoints()-u.getHitPoints()))/u.getType().maxHitPoints();
+			}
+			if(u.isUpgrading()) {
+				currentUpgrade = u.getUpgrade();
+			}
+			if(u.isResearching()) {
+				currentTech = u.getTech();
 			}
 		} else {
 			timeSinceVisible++;
@@ -75,6 +92,12 @@ public class HisUnit extends PositionedObject {
 	}
 	public int getAirWeaponCooldown() {
 		return airWeaponCooldown;
+	}
+	public UpgradeType getUpgrade() {
+		return currentUpgrade;
+	}
+	public TechType getTech() {
+		return currentTech;
 	}
 	public boolean isCompleted() {
 		return isCompleted;
