@@ -15,5 +15,6 @@ public enum UnitState {
 	ON_COOLDOWN,
 	DEATHBALLING,
 	IN_SHUTTLE,
+	CONTAINING,
 	ABOUT_TO_DIE
 }

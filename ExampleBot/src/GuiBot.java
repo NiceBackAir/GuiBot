@@ -3,6 +3,7 @@ import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 
 import bwapi.Color;
@@ -247,8 +248,8 @@ public class GuiBot extends DefaultBWListener {
     public void onUnitComplete(Unit unit) {   
     	try {
 	    	if(game.getFrameCount() > 0) {
-		    	if(unit.getType() == UnitType.Protoss_Zealot) {
-		    		mainArmy.add(new Zealot(unit, game));
+		    	if(unit.getPlayer() == self && unit.getType() == UnitType.Protoss_Zealot) {
+		    		freeAgents.add(new Zealot(unit, game));
 		    	}
 	    	}
 		} catch (Exception e) {
@@ -300,8 +301,8 @@ public class GuiBot extends DefaultBWListener {
         enemyUpgradeTab = new HashMap<UpgradeType, Integer>();
         enemyBuildings = new HashMap<Integer, HisUnit>();
         enemyResearchTab = new HashSet<TechType>();
-        freeAgents = new Squad();
-        mainArmy = new Squad();
+        freeAgents = new Squad(game);
+        mainArmy = new Squad(game);
         army = new ArrayList<Squad>();
         
         nextItem = null;
@@ -1135,6 +1136,8 @@ public class GuiBot extends DefaultBWListener {
     		&& self.allUnitCount(UnitType.Protoss_Robotics_Facility) > 0) {
     			
     		nextBuilding = UnitType.Protoss_Robotics_Support_Bay; 		
+    	} else if(self.allUnitCount(UnitType.Protoss_Gateway) <2) {
+    		nextBuilding = UnitType.Protoss_Gateway;  
     	} else if(self.allUnitCount(UnitType.Protoss_Observatory) == 0 
     		&& self.allUnitCount(UnitType.Protoss_Robotics_Facility) > 0) {
 		
@@ -1538,7 +1541,6 @@ public class GuiBot extends DefaultBWListener {
     		//finalize vector
     		moveVector[0] = threatVector[0] + clusterVector[0];
     		moveVector[1] = threatVector[1] + clusterVector[1];
-    		boolean kiteForward = (moveVector[0]*targetVector[0] + moveVector[1]*targetVector[1] > 0);
     		boolean hasCommand = false;
     		if(targetVector[0] == 0 && targetVector[1] == 0) {
     			if(attackVector[0] == 0 && attackVector[1] == 0) {
@@ -1574,8 +1576,8 @@ public class GuiBot extends DefaultBWListener {
 //         					game.drawCircleMap(x, y, (int) scale + 32, Color.Red);
          					d = cornerPos.getApproxDistance(myUnit.getPosition());
          					double rectDist = Math.abs(x-myUnit.getX()) + Math.abs(y-myUnit.getY());
-	    					terrainVector[0] += -4*scale*scale/d/rectDist*(x-myUnit.getX());
-	    					terrainVector[1] += -4*scale*scale/d/rectDist*(y-myUnit.getY());
+	    					terrainVector[0] += -3*scale*scale/rectDist/rectDist*(x-myUnit.getX());
+	    					terrainVector[1] += -3*scale*scale/rectDist/rectDist*(y-myUnit.getY());
          				//}
          			}
          		}
@@ -1613,7 +1615,9 @@ public class GuiBot extends DefaultBWListener {
 	    		//choose the best units to attack
 	    		for(Unit hisUnit: myUnit.getUnitsInRadius(self.weaponMaxRange(myUnit.getType().airWeapon()) + 32)) {
 					if(hisUnit.getPlayer().equals(game.enemy())	&& hisUnit.isCompleted() && hisUnit.isFlying() && myUnit.isInWeaponRange(hisUnit)) {
-						safeToAttack = ((hisUnit.getX()-myUnit.getX())*moveVector[0] + (hisUnit.getY()-myUnit.getY())*moveVector[1]> 0);
+						d = myUnit.getPosition().getApproxDistance(hisUnit.getPosition());
+//						safeToAttack = ((hisUnit.getX()-myUnit.getX())*moveVector[0] + (hisUnit.getY()-myUnit.getY())*moveVector[1]> 0);
+						safeToAttack = ((hisUnit.getX()-myUnit.getX())*moveVector[0] + (hisUnit.getY()-myUnit.getY())*moveVector[1]> d*scale*Math.cos(Math.PI/4));
 						hitsToKillHim = (int) Math.ceil(hisUnit.getHitPoints()/(double)game.getDamageTo(hisUnit.getType(), myUnit.getType(),game.enemy()));
 						
 						if(safeToAttack && hitsToKillHim < leastHits) {	        						
@@ -1624,18 +1628,29 @@ public class GuiBot extends DefaultBWListener {
 	    		}
     		}
 	    	if(!hasCommand) {
-				if(weakestAirEnemy != null && myUnit.getAirWeaponCooldown() == 0) {   	
-					myUnit.attack(weakestAirEnemy);
-					//game.drawLineMap(myUnit.getX(), myUnit.getY(), weakestAirEnemy.getX(), weakestAirEnemy.getY(), Color.Red);
-//					game.drawLineMap(myUnit.getX(), myUnit.getY(), myUnit.getX()+(int)moveVector[0], myUnit.getY()+(int)moveVector[1], Color.Green);
-				} else if(weakestAirEnemy != null && myUnit.getAirWeaponCooldown() != 0 && !kiteForward) {
-					if(!myUnit.isInWeaponRange(weakestAirEnemy))
+	    		boolean kiteForward = false;
+	    		if(weakestAirEnemy != null) {
+	    			targetVector = new double[]{weakestAirEnemy.getX() - myUnit.getX(), weakestAirEnemy.getY() - myUnit.getY()};
+		    		targetVector = setMagnitude(targetVector, scale);
+		    		threatVector = setMagnitude(threatVector, scale);
+		    		threatVector = adjustForWalls(threatVector, myUnit);
+		    		kiteForward = (threatVector[0]*targetVector[0] + threatVector[1]*targetVector[1] > scale*scale*Math.cos(Math.PI/4));
+	    		} 
+				if(weakestAirEnemy != null && myUnit.getAirWeaponCooldown() == 0) {
+					if(myUnit.getLastCommand().getUnitCommandType() != UnitCommandType.Attack_Unit)
+						myUnit.attack(weakestAirEnemy);
+					game.drawLineMap(myUnit.getX(), myUnit.getY(), weakestAirEnemy.getX(), weakestAirEnemy.getY(), Color.Red);
+					game.drawLineMap(myUnit.getX(), myUnit.getY(), myUnit.getX()+(int)moveVector[0], myUnit.getY()+(int)moveVector[1], Color.Green);
+				} else if(weakestAirEnemy != null && myUnit.getAirWeaponCooldown() > 0 && !kiteForward) {
+					if(myUnit.getAirWeaponCooldown() < myUnit.getType().groundWeapon().damageCooldown()-1
+						&& !myUnit.isInWeaponRange(weakestAirEnemy))
+						
 						myUnit.move(weakestAirEnemy.getPosition());
-					//game.drawLineMap(myUnit.getX(), myUnit.getY(), weakestAirEnemy.getX(), weakestAirEnemy.getY(), Color.Red);
-//					game.drawLineMap(myUnit.getX(), myUnit.getY(), myUnit.getX()+(int)moveVector[0], myUnit.getY()+(int)moveVector[1], Color.Green);
+					game.drawLineMap(myUnit.getX(), myUnit.getY(), weakestAirEnemy.getX(), weakestAirEnemy.getY(), Color.Red);
+					game.drawLineMap(myUnit.getX(), myUnit.getY(), myUnit.getX()+(int)moveVector[0], myUnit.getY()+(int)moveVector[1], Color.Green);
 				} else {
 					myUnit.move(new Position(myUnit.getX()+(int)moveVector[0], myUnit.getY()+(int)moveVector[1]));
-//					game.drawLineMap(myUnit.getX(), myUnit.getY(), myUnit.getX()+(int)moveVector[0], myUnit.getY()+(int)moveVector[1], Color.Green);
+					game.drawLineMap(myUnit.getX(), myUnit.getY(), myUnit.getX()+(int)moveVector[0], myUnit.getY()+(int)moveVector[1], Color.Green);
 				}      	
 	    	}
     	}
@@ -1647,7 +1662,7 @@ public class GuiBot extends DefaultBWListener {
      * @param scale	desired magnitude
      * @return		vector scaled to magnitude
      */
-    public double[] setMagnitude(double[] v, double scale) {
+    public static double[] setMagnitude(double[] v, double scale) {
     	if(v[0] == 0 && v[1] == 0 || scale <0)
     		return v;
     	else if(scale == 0)
@@ -1726,25 +1741,49 @@ public class GuiBot extends DefaultBWListener {
      */
     public void controlArmy() throws Exception {
     	//default attack position if you can't see anything    	
-	    
-    	game.drawLineMap(new Position(attackPosition.getX() - 5,  attackPosition.getY() - 5), 
-    		new Position(attackPosition.getX() + 5,  attackPosition.getY() + 5), Color.Red);
-    	game.drawLineMap(new Position(attackPosition.getX() + 5,  attackPosition.getY() - 5), 
-        	new Position(attackPosition.getX() - 5,  attackPosition.getY() + 5), Color.Red);
+	       	
+    	Unit closestEnemy = null;
+		int centerX = 0;
+		int centerY = 0;
+		int unitCount = 0;
+    	if(mainArmy.getUnits().size() > 0) {
+			for(Unit hisUnit: game.getUnitsInRadius(mainArmy.findCenter(), 13*32)) { 				
+				if(hisUnit.getPlayer().equals(game.enemy()) && hisUnit.isDetected() && !hisUnit.isInvincible() 					
+					&& hisUnit.getType() != UnitType.Zerg_Larva && hisUnit.getType() != UnitType.Zerg_Egg) {
+						
+					centerX += hisUnit.getX();
+					centerY += hisUnit.getY();
+					unitCount++;
+				}
+			}
+    	}
+    	if(unitCount > 0) {
+			centerX /= unitCount;
+			centerY /= unitCount;
+			attackPosition = new Position(centerX, centerY);
+    	}
     	
+    	game.drawLineMap(new Position(attackPosition.getX() - 5,  attackPosition.getY() - 5), 
+        		new Position(attackPosition.getX() + 5,  attackPosition.getY() + 5), Color.Red);
+        	game.drawLineMap(new Position(attackPosition.getX() + 5,  attackPosition.getY() - 5), 
+            	new Position(attackPosition.getX() - 5,  attackPosition.getY() + 5), Color.Red);
+        	
     	//army commands go here
-    	if(self.completedUnitCount(UnitType.Protoss_Zealot) + self.completedUnitCount(UnitType.Protoss_Dragoon) >= 12) {
+    	if(mainArmy.getUnits().size() > 0 && 
+    		((mainArmy.getUnits().size() >= 6  && mainArmy.isTogether()) || mainArmy.getCommand() == UnitState.ATTACKING)) {
 //    		if(mainArmy.isTogether()) {
-    			mainArmy.attack(attackPosition);
+    		mainArmy.attack(attackPosition,10*32);
 //    		} else {
 //    			mainArmy.groupUp(rallyPosition);
 //    		}
-    		
-    	} else if(defenseChoke != null) {
+    	} else if(defenseChoke != null ) {
+    		mainArmy.takeAllUnits(freeAgents);
     		mainArmy.holdChoke(defenseChoke);
     	}
+    	if(defenseChoke != null) {
+    		freeAgents.holdChoke(defenseChoke);
+    	}
     	
-    	Unit closestEnemy;
     	Unit closestSquishy;
     	Unit closestGroundSquishy;
     	Unit closestGroundEnemy;

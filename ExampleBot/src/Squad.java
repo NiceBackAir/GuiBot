@@ -1,7 +1,11 @@
 import java.util.ArrayList;
 import java.util.Iterator;
 
+import bwapi.Color;
+import bwapi.Game;
 import bwapi.Position;
+import bwapi.Unit;
+import bwapi.UnitType;
 import bwta.BaseLocation;
 import bwta.Chokepoint;
 
@@ -9,14 +13,17 @@ public class Squad {
 	private ArrayList<MyUnit> units;
 	private UnitState command;
 	private Position objective;
-	private double radius;
+	private int radius;
 	private BaseLocation base;
+	private Game game;
 	
-	public Squad() {
+	public Squad(Game game) {
 		units = new ArrayList<MyUnit>();
+		this.game = game;
 	}
-	public Squad(ArrayList<MyUnit> myUnits) {
+	public Squad(ArrayList<MyUnit> myUnits, Game game) {
 		units = myUnits;
+		this.game = game;
 	}
 	
 	public void add(MyUnit myUnit) {
@@ -38,7 +45,7 @@ public class Squad {
 		}
 	}
 	public void holdChoke(Chokepoint choke) throws Exception {
-		command = UnitState.HOLDING;
+		command = UnitState.CONTAINING;
 		objective = choke.getCenter();
 		Iterator<MyUnit> itr = units.iterator();
 		MyUnit myUnit;
@@ -50,23 +57,85 @@ public class Squad {
 				itr.remove();
 			}
 		}
+		findCenter();
 	}
-	public void attack(Position attackPosition) throws Exception {
-		// TODO Auto-generated method stub
-		command = UnitState.ATTACKING;
-		objective = attackPosition;
+	public void contain(Position pos, int range) throws Exception {
+		objective = pos;
 		Iterator<MyUnit> itr = units.iterator();
 		MyUnit myUnit;
+		double d;
+		Position center = findCenter();
 		while(itr.hasNext()) {
 			myUnit = itr.next();
 			if(myUnit.getUnit().exists()) {
-				myUnit.attack(attackPosition, true);
+				d = myUnit.getPosition().getApproxDistance(pos);
+				if(d >= range + 5*32)
+					myUnit.move(pos);
+				else if(d >= range)
+					myUnit.surround(pos, center, range);
+				else
+					myUnit.moveAwayFrom(pos);
 			} else {
 				itr.remove();
 			}
 		}
+		findCenter();
 	}
-	
+	public void attack(Position attackPosition, int range) throws Exception {
+		// TODO Auto-generated method stub
+		command = UnitState.ATTACKING;
+		objective = attackPosition;
+		radius = range;
+		boolean attackBuildings = true;
+		for(Unit hisUnit: game.getUnitsInRadius(attackPosition, range)) {
+			if(hisUnit.getPlayer() == game.enemy() && hisUnit.isDetected() && !hisUnit.isInvincible()
+				&& (attackBuildings || !hisUnit.getType().isBuilding() || !hisUnit.getType().canAttack()
+				|| hisUnit.getType() == UnitType.Terran_Bunker)					
+				&& hisUnit.getType() != UnitType.Zerg_Egg && hisUnit.getType() != UnitType.Zerg_Larva ) {
+				
+				attackBuildings = false;
+				break;
+			}				
+		}
+		Iterator<MyUnit> itr = units.iterator();
+		MyUnit myUnit;
+		if(isStaged(attackPosition, range)) {
+			while(itr.hasNext()) {
+				myUnit = itr.next();
+				if(myUnit.getUnit().exists()) {
+					myUnit.attack(attackPosition, attackBuildings);
+				} else {
+					itr.remove();
+				}
+			}
+		} else {
+			contain(attackPosition, range);
+		}
+		findCenter();
+		game.drawCircleMap(attackPosition,range, Color.Red);
+	}
+	public Position findCenter() {
+		int centerX = 0;
+		int centerY = 0;
+		Iterator<MyUnit> itr = units.iterator();
+		MyUnit myUnit;
+		int unitCount = 0;
+		while(itr.hasNext()) {
+			myUnit = itr.next();
+			centerX += myUnit.getX();
+			centerY += myUnit.getY();
+			unitCount++;
+		}
+		if(unitCount == 0) 
+			return null;
+		
+		centerX /= unitCount;
+		centerY /= unitCount;
+
+		game.drawCircleMap(new Position(centerX, centerY), 3, Color.Green);
+		game.drawTextMap(new Position(centerX, centerY), ""+unitCount);
+		return new Position(centerX, centerY);		
+	}
 	public ArrayList<MyUnit> getUnits() {
 		return units;
 	}
@@ -76,12 +145,32 @@ public class Squad {
 	public Position getObjective() {
 		return objective;
 	}
+	public void takeAllUnits(Squad squad) {
+		units.addAll(squad.getUnits());
+		squad.clearUnits();
+	}
+	public void clearUnits() {
+		units.clear();
+	}
 	public boolean isTogether() {
+		Position center = findCenter();
 		for(MyUnit u: units) {
-			if(u.getUnit().getPosition().getApproxDistance(objective) >= radius) {
+			if(u.getUnit().getPosition().getApproxDistance(center) >= 10*32) {
 				return false;
 			}
 		}
+		return true;
+	}
+	public boolean isStaged(Position pos, int range) {		
+		Position center = findCenter();
+		if(center != null && center.getApproxDistance(pos) <  range-32)
+			return true;
+
+		for(MyUnit u: units) {
+			if(u.getUnit().getPosition().getApproxDistance(pos) >= range + 3*32) {
+				return false;
+			}
+		}		
 		return true;
 	}
 }
