@@ -16,6 +16,8 @@ public class Squad {
 	private int radius;
 	private BaseLocation base;
 	private Game game;
+	private boolean seesEnemies;
+	private Position center;
 	
 	public Squad(Game game) {
 		units = new ArrayList<MyUnit>();
@@ -57,21 +59,21 @@ public class Squad {
 				itr.remove();
 			}
 		}
-		findCenter();
+		center = findCenter();
 	}
 	public void contain(Position pos, int range) throws Exception {
 		objective = pos;
 		Iterator<MyUnit> itr = units.iterator();
 		MyUnit myUnit;
 		double d;
-		Position center = findCenter();
+		center = findCenter();
 		while(itr.hasNext()) {
 			myUnit = itr.next();
 			if(myUnit.getUnit().exists()) {
 				d = myUnit.getPosition().getApproxDistance(pos);
-				if(d >= range + 5*32)
+				if(d >= range + 5*32) {
 					myUnit.move(pos);
-				else if(d >= range)
+				} else if(d >= range)
 					myUnit.surround(pos, center, range);
 				else
 					myUnit.moveAwayFrom(pos);
@@ -79,18 +81,18 @@ public class Squad {
 				itr.remove();
 			}
 		}
-		findCenter();
 	}
 	public void attack(Position attackPosition, int range) throws Exception {
 		// TODO Auto-generated method stub
 		command = UnitState.ATTACKING;
 		objective = attackPosition;
 		radius = range;
+		center = findCenter();
 		boolean attackBuildings = true;
 		for(Unit hisUnit: game.getUnitsInRadius(attackPosition, range)) {
 			if(hisUnit.getPlayer() == game.enemy() && hisUnit.isDetected() && !hisUnit.isInvincible()
-				&& (attackBuildings || !hisUnit.getType().isBuilding() || !hisUnit.getType().canAttack()
-				|| hisUnit.getType() == UnitType.Terran_Bunker)					
+				&& (!hisUnit.getType().isBuilding() || hisUnit.getType().canAttack()
+				|| hisUnit.getType() == UnitType.Terran_Bunker) && hisUnit.getType() != UnitType.Resource_Vespene_Geyser					
 				&& hisUnit.getType() != UnitType.Zerg_Egg && hisUnit.getType() != UnitType.Zerg_Larva ) {
 				
 				attackBuildings = false;
@@ -109,9 +111,12 @@ public class Squad {
 				}
 			}
 		} else {
-			contain(attackPosition, range);
+			if(isTogether() || attackPosition.getApproxDistance(center) > 40*32 || attackPosition.getApproxDistance(center) < 15*32) {
+				contain(attackPosition, range);
+			} else {
+				groupUp(center);
+			}			
 		}
-		findCenter();
 		game.drawCircleMap(attackPosition,range, Color.Red);
 	}
 	public Position findCenter() {
@@ -135,6 +140,16 @@ public class Squad {
 		game.drawCircleMap(new Position(centerX, centerY), 3, Color.Green);
 		game.drawTextMap(new Position(centerX, centerY), ""+unitCount);
 		return new Position(centerX, centerY);		
+	}
+	public void groupUp(Position pos) throws Exception {
+		objective = pos;
+		Iterator<MyUnit> itr = units.iterator();
+		MyUnit myUnit;
+		Position center = findCenter();
+		while(itr.hasNext()) {
+			myUnit = itr.next();
+			myUnit.move(center);
+		}
 	}
 	public ArrayList<MyUnit> getUnits() {
 		return units;

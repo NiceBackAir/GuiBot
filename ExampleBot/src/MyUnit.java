@@ -19,6 +19,7 @@ public class MyUnit extends PositionedObject {
 	protected Squad squad;
 	protected boolean gotCommand;
 	protected Game game;
+	protected int cancelFrames;
 	
 	public static MyUnit createFrom(Unit u, Game game) {
 		if (u == null) {
@@ -35,6 +36,8 @@ public class MyUnit extends PositionedObject {
 		this.game = game;
 		this.u = u;
 		scale = 5*32;
+		//stupid goon cancel frames
+		cancelFrames = 0;
 	}
 
 	@Override
@@ -59,15 +62,32 @@ public class MyUnit extends PositionedObject {
 	}
 	
 	public void attack(Position pos, boolean attackBuildings) throws Exception {
-		if(isFree(attackBuildings)) {
-//			if(u.getGroundWeaponCooldown() == 0)
-			if((u.getLastCommand().getUnitCommandType() != UnitCommandType.Attack_Move
-				&& !u.getLastCommand().getTargetPosition().equals(pos))
-				|| u.getGroundWeaponCooldown() == 0)
-				
+		target = getTarget(attackBuildings);
+		if(target != null) {
+			if(isFree(target)) {
+				if(u.getGroundWeaponCooldown() == 0) {
+					if(!(u.getLastCommand().getUnitCommandType() == UnitCommandType.Attack_Unit
+						&& !u.getLastCommand().getTarget().equals(target) && u.isInWeaponRange(target)) && u.getGroundWeaponCooldown() == 0)
+					
+					u.attack(target);
+				} else
+					u.move(target.getPosition());
+				game.drawTextMap(u.getPosition(),""+u.getLastCommand().getUnitCommandType());
+			}
+		} else if(isFree(attackBuildings)) {
+//			if((u.getLastCommand().getUnitCommandType() != UnitCommandType.Attack_Move
+//				&& !u.getLastCommand().getTargetPosition().equals(pos))
+//				|| u.getGroundWeaponCooldown() == 0)
+//				
+//				u.attack(pos);
+//			if(u.getGroundWeaponCooldown() == 0) {
+				if(!(u.getLastCommand().getUnitCommandType() == UnitCommandType.Attack_Move
+					&& !u.getLastCommand().getTargetPosition().equals(pos)))
+			
 				u.attack(pos);
-//			else
+//			} else
 //				u.move(pos);
+			game.drawTextMap(u.getPosition(),""+u.getLastCommand().getUnitCommandType());
 		} else {
 			game.drawTextMap(u.getPosition(), "busy");
 		}
@@ -79,12 +99,14 @@ public class MyUnit extends PositionedObject {
 //		return null;
 //	}
 	public boolean[] holdPosition() throws Exception {
+		target = getTarget(false);
 		if(isFree(true) && !u.isHoldingPosition()) {
 			u.holdPosition();
 		}
 		return null;
 	}
 	public boolean[] move(Position pos) throws Exception {
+		target = null;
 		if(isFree(true)) {
 			u.move(pos);
 		}
@@ -156,6 +178,9 @@ public class MyUnit extends PositionedObject {
 	}
 	
 	public void blockChoke(Chokepoint choke) throws Exception {
+		target = getTarget(false);
+		if(u.isStuck())
+			game.sendText("stuck");
 		if(choke != null && isFree(true)) {
 			if(GuiBot.intersects(u.getType(), u.getPosition(), choke.getSides().first, choke.getSides().second)) {
 				if(!u.isHoldingPosition())
@@ -163,65 +188,65 @@ public class MyUnit extends PositionedObject {
 			} else if(choke.getCenter().getApproxDistance(u.getPosition()) < choke.getWidth()/1.5) {
 				if(!u.isHoldingPosition()) {
 					if(u.isStuck()) {// && GuiBot.walkMap[u.getTilePosition().getX()][u.getTilePosition().getY()] >= 0) {
-						u.holdPosition();
-					} else if(BWTA.getRegion(u.getPosition()).equals(choke.getRegions().first)) {				
+						u.holdPosition();						
+					} else if(BWTA.getRegion(u.getPosition()).equals(choke.getRegions().first)) {	
 						u.attack(choke.getRegions().second.getCenter());
 					} else {
 						u.attack(choke.getRegions().first.getCenter());
 					}
 				}
 			} else
-				u.move(choke.getCenter());
+				u.attack(choke.getCenter());
 		}
 	}
-	
+		
+	public Unit getTarget(boolean attackBuildings) throws Exception {
+		Unit closestEnemy = null;
+		for(Unit hisUnit: u.getUnitsInRadius(u.getType().seekRange())) {// u.getUnitsInWeaponRange(u.getType().groundWeapon())) {
+			if(hisUnit.getPlayer() == game.enemy()) {
+				if(u.isInWeaponRange(hisUnit) && hisUnit.isDetected() && !hisUnit.isInvincible() && u.canAttack(hisUnit)
+					&& (attackBuildings || !hisUnit.getType().isBuilding() || hisUnit.getType().canAttack()
+					|| hisUnit.getType() == UnitType.Terran_Bunker)					
+					&& hisUnit.getType() != UnitType.Zerg_Egg && hisUnit.getType() != UnitType.Zerg_Larva ) {
+					
+					if(closestEnemy == null || hisUnit.getDistance(u) < closestEnemy.getDistance(u)) {
+						closestEnemy = hisUnit;
+					}
+				}
+			}
+		}
+		return closestEnemy;
+	}
 	//default check to see if unit's attack will not be interrupted with another command. Good for zealots, DTs, and Archons
 	public boolean isFree(boolean attackBuildings) throws Exception {
 		if(u.isLoaded())
 			return false;	
-		if(u.getGroundWeaponCooldown() < u.getType().groundWeapon().damageCooldown()-1 && u.getGroundWeaponCooldown() > 0)
+		if(u.getGroundWeaponCooldown() < u.getType().groundWeapon().damageCooldown()-cancelFrames-1 && u.getGroundWeaponCooldown() > 0)
 			return true;
 		
-//		if(u.getLastCommand().getUnitCommandType() == UnitCommandType.Attack_Move				
-//			|| u.getLastCommand().getUnitCommandType() == UnitCommandType.Hold_Position
-//			|| u.getLastCommand().getUnitCommandType() == UnitCommandType.Move) {
+		if(u.getLastCommand().getUnitCommandType() == UnitCommandType.Attack_Move				
+			|| u.getLastCommand().getUnitCommandType() == UnitCommandType.Hold_Position) {
 			
-			for(Unit hisUnit: u.getUnitsInRadius(u.getType().seekRange())) {// u.getUnitsInWeaponRange(u.getType().groundWeapon())) {
-				if(hisUnit.getPlayer() == game.enemy()) {
-//					game.sendText("hi");
-//					game.drawTextMap(u.getPosition(), ""+u.getLastCommand().getUnitCommandType());
-					if(u.isInWeaponRange(hisUnit) && hisUnit.isDetected() && !hisUnit.isInvincible() && u.canAttack(hisUnit)
-						&& (attackBuildings || !hisUnit.getType().isBuilding() || !hisUnit.getType().canAttack()
-						|| hisUnit.getType() == UnitType.Terran_Bunker)					
-						&& hisUnit.getType() != UnitType.Zerg_Egg && hisUnit.getType() != UnitType.Zerg_Larva ) {
-						
-						return false;
-					}
-				}
-			}
-//			return true;
-//		}
+			if(target != null)
+				return false;
+		}
 			
 		return true;
 	}
+	
 	//default check to see if unit's attack unit command will not be interrupted with another command. Good for zealots, DTs, and Archons
 	public boolean isFree(Unit hisUnit) {
 		if(u.isLoaded())
 			return false;
-		if(u.getGroundWeaponCooldown() < u.getType().groundWeapon().damageCooldown() && u.getGroundWeaponCooldown() > 0)
+		if(u.getGroundWeaponCooldown() < u.getType().groundWeapon().damageCooldown()-cancelFrames-1 && u.getGroundWeaponCooldown() > 0)
 			return true;
 		if(u.getLastCommand().getUnitCommandType() == UnitCommandType.Attack_Unit && u.getLastCommand().getTarget().equals(hisUnit)
-			&& hisUnit.isDetected() && !hisUnit.isInvincible() && hisUnit.getType() != UnitType.Resource_Vespene_Geyser 
-			&& hisUnit.exists() && u.isInWeaponRange(hisUnit) && u.canAttack(hisUnit) && u.isInWeaponRange(hisUnit)) {
+			&& hisUnit.isDetected() && hisUnit.getType() != UnitType.Resource_Vespene_Geyser 
+			&& hisUnit.exists() && u.isInWeaponRange(hisUnit) && u.canAttack(hisUnit)) {
 			
 			return false;
 		}
 		return true;
-	}
-	
-	//respond to a bulk army attack command
-	public double[] attack() {
-		return null;
 	}
 	
 	//respond to a bulk army retreat command
@@ -229,7 +254,7 @@ public class MyUnit extends PositionedObject {
 		return null;
 	}
 	
-	//respond to a bulk refend position command
+	//respond to a bulk defend position command
 	public double[] defend(Position rallyPoint) {
 		return null;
 	}
