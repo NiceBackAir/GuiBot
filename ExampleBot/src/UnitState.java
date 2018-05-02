@@ -16,5 +16,6 @@ public enum UnitState {
 	DEATHBALLING,
 	IN_SHUTTLE,
 	CONTAINING,
+	MINING,
 	ABOUT_TO_DIE
 }

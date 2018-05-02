@@ -11,9 +11,10 @@ public class HisUnit extends PositionedObject {
 	private int airWeaponCooldown;
 	private UpgradeType currentUpgrade;
 	private TechType currentTech;
+	private Game game;
 	
 	//constructor blob
-	public HisUnit() {
+	public HisUnit(Game game) {
 		super();
 		u = null;
 		type = UnitType.Unknown;
@@ -25,8 +26,9 @@ public class HisUnit extends PositionedObject {
 		isCompleted = false;
 		groundWeaponCooldown = 0;
 		airWeaponCooldown = 0;
+		this.game = game;
 	}	
-	public HisUnit(Unit hisUnit) {
+	public HisUnit(Unit hisUnit, Game game) {
 		u = hisUnit;
 		remainingBuildTime = 0;
 		lastPosition = hisUnit.getPosition();
@@ -39,6 +41,7 @@ public class HisUnit extends PositionedObject {
 			if(hisUnit.getType().isBuilding())
 				remainingBuildTime = (hisUnit.getType().buildTime()*(hisUnit.getType().maxHitPoints()-hisUnit.getHitPoints()))/hisUnit.getType().maxHitPoints();
 		}
+		this.game = game;
 	}
 	
 	/**keeps track of timers when the unit is not visible, updates typing if it is visible.
@@ -64,6 +67,9 @@ public class HisUnit extends PositionedObject {
 			timeSinceVisible++;
 			groundWeaponCooldown = Math.max(0, groundWeaponCooldown-1);
 			airWeaponCooldown = Math.max(0, airWeaponCooldown-1);
+			if(lastPosition != null && game.isVisible(lastPosition.toTilePosition())) {
+				lastPosition = null;
+			}
 		}
 		
 		if(remainingBuildTime == 0)
@@ -96,10 +102,24 @@ public class HisUnit extends PositionedObject {
 	public UpgradeType getUpgrade() {
 		return currentUpgrade;
 	}
+	public int getTimeSinceVisible() {
+		return timeSinceVisible;
+	}
 	public TechType getTech() {
 		return currentTech;
 	}
 	public boolean isCompleted() {
 		return isCompleted;
+	}
+	public int getRange() {
+		Player player = game.enemy();
+		int range = 0;
+		if(u.getType().groundWeapon() != WeaponType.None)
+			range = player.weaponMaxRange(u.getType().groundWeapon());
+		if(u.getType().airWeapon() != WeaponType.None)
+			range = Math.max(range, player.weaponMaxRange(u.getType().airWeapon()));		
+		if(u.getType() == UnitType.Terran_Bunker)
+			range = player.weaponMaxRange(WeaponType.Gauss_Rifle);
+		return range;
 	}
 }

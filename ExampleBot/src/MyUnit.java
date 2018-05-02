@@ -46,6 +46,18 @@ public class MyUnit extends PositionedObject {
 		return u.getPosition();
 	}
 	
+	public Unit getClosestPatch() {
+		Unit closestPatch = null;
+		for(Unit neutralUnit: u.getUnitsInRadius(u.getType().sightRange())) {
+			if(neutralUnit.getType().isMineralField() && (closestPatch == null 
+				|| u.getPosition().getApproxDistance(neutralUnit.getPosition()) 
+				< u.getPosition().getApproxDistance(closestPatch.getPosition()))) {
+				
+				closestPatch = neutralUnit;
+			}
+		}
+		return closestPatch;
+	}
 	public void command(UnitState myCommand, Position pos) {		
 	}
 	public void command(UnitState myCommand, Chokepoint choke, int range) throws Exception {		
@@ -63,6 +75,8 @@ public class MyUnit extends PositionedObject {
 	
 	public void attack(Position pos, boolean attackBuildings) throws Exception {
 		target = getTarget(attackBuildings);
+//		if(u.isStuck())
+//			game.sendText("stuck");	
 		if(target != null) {
 			if(isFree(target)) {
 				if(u.getGroundWeaponCooldown() == 0) {
@@ -72,7 +86,9 @@ public class MyUnit extends PositionedObject {
 					u.attack(target);
 				} else
 					u.move(target.getPosition());
-				game.drawTextMap(u.getPosition(),""+u.getLastCommand().getUnitCommandType());
+//				game.drawTextMasp(u.getPosition(),""+u.getLastCommand().getUnitCommandType());
+			} else {
+//				game.drawTextMap(u.getPosition(), "busy");
 			}
 		} else if(isFree(attackBuildings)) {
 //			if((u.getLastCommand().getUnitCommandType() != UnitCommandType.Attack_Move
@@ -87,9 +103,9 @@ public class MyUnit extends PositionedObject {
 				u.attack(pos);
 //			} else
 //				u.move(pos);
-			game.drawTextMap(u.getPosition(),""+u.getLastCommand().getUnitCommandType());
+//			game.drawTextMap(u.getPosition(),""+u.getLastCommand().getUnitCommandType());
 		} else {
-			game.drawTextMap(u.getPosition(), "busy");
+//			game.drawTextMap(u.getPosition(), "busy");
 		}
 	}
 //	public boolean[] attack(Unit hisUnit) {
@@ -118,7 +134,7 @@ public class MyUnit extends PositionedObject {
 		moveVector = terrainCorrection(moveVector);
  		
  		u.move(new Position(u.getX()+(int)moveVector[0], u.getY()+(int)moveVector[1]));
- 		game.drawLineMap(u.getPosition(), new Position(u.getX() + (int)moveVector[0], u.getY() + (int)moveVector[1]), Color.White);
+// 		game.drawLineMap(u.getPosition(), new Position(u.getX() + (int)moveVector[0], u.getY() + (int)moveVector[1]), Color.White);
 	}
 	
 	/** Surround enemies like water, literally
@@ -143,8 +159,8 @@ public class MyUnit extends PositionedObject {
 		moveVector[1] += -1*(1 + R*R/r/r)*sinTheta*(cosTheta*cosFlowAngle - sinTheta*sinFlowAngle);		
 				
 		moveVector = GuiBot.setMagnitude(moveVector, scale);
- 		game.drawLineMap(u.getPosition(), new Position(u.getX() + (int)moveVector[0], u.getY() + (int)moveVector[1]), Color.Blue);
 		moveVector = terrainCorrection(moveVector);
+// 		game.drawLineMap(u.getPosition(), new Position(u.getX() + (int)moveVector[0], u.getY() + (int)moveVector[1]), Color.Blue);
 		
  		u.move(new Position(u.getX()+(int)moveVector[0], u.getY()+(int)moveVector[1]));
 	}
@@ -179,32 +195,37 @@ public class MyUnit extends PositionedObject {
 	
 	public void blockChoke(Chokepoint choke) throws Exception {
 		target = getTarget(false);
-		if(u.isStuck())
-			game.sendText("stuck");
-		if(choke != null && isFree(true)) {
-			if(GuiBot.intersects(u.getType(), u.getPosition(), choke.getSides().first, choke.getSides().second)) {
+//		if(u.isStuck()) 
+//			game.sendText("stuck");	
+		if(choke != null && isFree(false)) {
+			if(game.self().weaponMaxRange(u.getType().groundWeapon()) <= 3*32
+				&& GuiBot.intersects(u.getType(), u.getPosition(), choke.getSides().first, choke.getSides().second)) {
+				//melee units can wall
 				if(!u.isHoldingPosition())
 					u.holdPosition();
 			} else if(choke.getCenter().getApproxDistance(u.getPosition()) < choke.getWidth()/1.5) {
 				if(!u.isHoldingPosition()) {
-					if(u.isStuck()) {// && GuiBot.walkMap[u.getTilePosition().getX()][u.getTilePosition().getY()] >= 0) {
-						u.holdPosition();						
-					} else if(BWTA.getRegion(u.getPosition()).equals(choke.getRegions().first)) {	
-						u.attack(choke.getRegions().second.getCenter());
+					if(BWTA.getRegion(u.getPosition()).equals(choke.getRegions().first)) {	
+						attack(choke.getRegions().second.getCenter(), false);
 					} else {
-						u.attack(choke.getRegions().first.getCenter());
+						attack(choke.getRegions().first.getCenter(), false);
 					}
 				}
 			} else
-				u.attack(choke.getCenter());
+				attack(choke.getCenter(), false);
 		}
 	}
 		
 	public Unit getTarget(boolean attackBuildings) throws Exception {
 		Unit closestEnemy = null;
-		for(Unit hisUnit: u.getUnitsInRadius(u.getType().seekRange())) {// u.getUnitsInWeaponRange(u.getType().groundWeapon())) {
+		int range = Math.max(u.getType().seekRange(), game.self().weaponMaxRange(u.getType().groundWeapon()));
+		if(range == 0 || !u.getType().canAttack()) {
+			range = u.getType().sightRange();
+		}
+//		System.out.println(range);
+		for(Unit hisUnit: u.getUnitsInRadius(range)) {// u.getUnitsInWeaponRange(u.getType().groundWeapon())) {
 			if(hisUnit.getPlayer() == game.enemy()) {
-				if(u.isInWeaponRange(hisUnit) && hisUnit.isDetected() && !hisUnit.isInvincible() && u.canAttack(hisUnit)
+				if(u.isInWeaponRange(hisUnit) && hisUnit.isDetected() && !hisUnit.isInvincible()// && u.canAttack(hisUnit, true, false, false)
 					&& (attackBuildings || !hisUnit.getType().isBuilding() || hisUnit.getType().canAttack()
 					|| hisUnit.getType() == UnitType.Terran_Bunker)					
 					&& hisUnit.getType() != UnitType.Zerg_Egg && hisUnit.getType() != UnitType.Zerg_Larva ) {
@@ -215,6 +236,8 @@ public class MyUnit extends PositionedObject {
 				}
 			}
 		}
+//		if(closestEnemy != null)
+//			game.drawLineMap(u.getPosition(), closestEnemy.getPosition(), Color.White);
 		return closestEnemy;
 	}
 	//default check to see if unit's attack will not be interrupted with another command. Good for zealots, DTs, and Archons
@@ -225,7 +248,8 @@ public class MyUnit extends PositionedObject {
 			return true;
 		
 		if(u.getLastCommand().getUnitCommandType() == UnitCommandType.Attack_Move				
-			|| u.getLastCommand().getUnitCommandType() == UnitCommandType.Hold_Position) {
+			|| u.getLastCommand().getUnitCommandType() == UnitCommandType.Hold_Position
+			|| u.getLastCommand().getUnitCommandType() == UnitCommandType.Patrol) {
 			
 			if(target != null)
 				return false;
@@ -240,9 +264,9 @@ public class MyUnit extends PositionedObject {
 			return false;
 		if(u.getGroundWeaponCooldown() < u.getType().groundWeapon().damageCooldown()-cancelFrames-1 && u.getGroundWeaponCooldown() > 0)
 			return true;
-		if(u.getLastCommand().getUnitCommandType() == UnitCommandType.Attack_Unit && u.getLastCommand().getTarget().equals(hisUnit)
+		if(u.getLastCommand().getTarget() != null && u.getLastCommand().getTarget().equals(hisUnit)
 			&& hisUnit.isDetected() && hisUnit.getType() != UnitType.Resource_Vespene_Geyser 
-			&& hisUnit.exists() && u.isInWeaponRange(hisUnit) && u.canAttack(hisUnit)) {
+			&& hisUnit.exists() && u.isInWeaponRange(hisUnit)) {// && u.canAttack(hisUnit, true, false, false)) {
 			
 			return false;
 		}
@@ -270,7 +294,6 @@ public class MyUnit extends PositionedObject {
 	public void driveShuttle(MyUnit shuttle) {
 		
 	}
-	
 	
 	public Unit getUnit() {
 		return u;
