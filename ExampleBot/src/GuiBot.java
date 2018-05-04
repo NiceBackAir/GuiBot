@@ -802,7 +802,8 @@ public class GuiBot extends DefaultBWListener {
         //now for enemy units
         for (Unit hisUnit: game.enemy().getUnits()) {
         	//check for intruders in my bases
-        	if((hisUnit.getType().canAttack() || !hisUnit.getType().isBuilding())
+        	if((!hisUnit.getType().groundWeapon().equals(WeaponType.None) || hisUnit.getType().isSpellcaster()
+    	    	|| hisUnit.getType() == UnitType.Terran_Dropship || hisUnit.getType() == UnitType.Protoss_Shuttle)
         		&& (!hisUnit.getType().isWorker() || hisUnit.isAttacking()) && bases.containsKey(BWTA.getRegion(hisUnit.getPosition()))) {
         		bases.get(BWTA.getRegion(hisUnit.getPosition())).setUnderAttack(true);
         	}
@@ -2505,32 +2506,32 @@ public class GuiBot extends DefaultBWListener {
 //		    			}
 //	    			}
 //	    			game.drawTextMap(myUnit.getPosition(), myUnit.getSpellCooldown()+"");
-	    		} else if(myUnit.getType() == UnitType.Protoss_Probe && myUnit != scoutingProbe) {
-	    			if(closestEnemy != null && (!closestEnemy.getType().groundWeapon().equals(WeaponType.None) || closestEnemy.getType().isSpellcaster()
-	    				|| closestEnemy.getType() == UnitType.Terran_Dropship || closestEnemy.getType() == UnitType.Protoss_Shuttle)
-	    				&& !(closestEnemy.getType().isWorker() && !closestEnemy.isAttacking())) {	    				
-	    				
-	    				Unit drillPatch = null;
-	    				Position mainCenter = new Position(self.getStartLocation().toPosition().getX()+3*16,self.getStartLocation().toPosition().getY()+4*16);
-    					for(Unit n: game.getNeutralUnits()) {
-    						if(n.getType().isMineralField()
-    							&& mainCenter.getApproxDistance(n.getPosition()) < 10*32) {
-    						
-    							if(drillPatch == null || n.getPosition().getApproxDistance(closestEnemy.getPosition()) 
-    								< drillPatch.getPosition().getApproxDistance(closestEnemy.getPosition())) {
-    								
-    								drillPatch = n;
-    							}
-    						}
-    					}
-    					if(drillPatch == null) {
-    						myUnit.move(self.getStartLocation().toPosition());
-    					} else if((myUnit.isUnderAttack() && myUnit.getHitPoints() + myUnit.getShields() <= 32)
-    						|| myUnit.getPosition().getApproxDistance(drillPatch.getPosition()) >= 8*32) {
-    						myUnit.gather(drillPatch);
-    					} else if(myUnit.getLastCommand().getUnitCommandType() != UnitCommandType.Attack_Unit) {
-    						if(game.getUnitsOnTile(myUnit.getTilePosition()).size() > 5 || self.completedUnitCount(UnitType.Protoss_Probe) <= 5) {
-		    					
+//	    		} else if(myUnit.getType() == UnitType.Protoss_Probe && myUnit != scoutingProbe) {
+//	    			if(closestEnemy != null && (!closestEnemy.getType().groundWeapon().equals(WeaponType.None) || closestEnemy.getType().isSpellcaster()
+//	    				|| closestEnemy.getType() == UnitType.Terran_Dropship || closestEnemy.getType() == UnitType.Protoss_Shuttle)
+//	    				&& !(closestEnemy.getType().isWorker() && !closestEnemy.isAttacking())) {	    				
+//	    				
+//	    				Unit drillPatch = null;
+//	    				Position mainCenter = new Position(self.getStartLocation().toPosition().getX()+3*16,self.getStartLocation().toPosition().getY()+4*16);
+//    					for(Unit n: game.getNeutralUnits()) {
+//    						if(n.getType().isMineralField()
+//    							&& mainCenter.getApproxDistance(n.getPosition()) < 10*32) {
+//    						
+//    							if(drillPatch == null || n.getPosition().getApproxDistance(closestEnemy.getPosition()) 
+//    								< drillPatch.getPosition().getApproxDistance(closestEnemy.getPosition())) {
+//    								
+//    								drillPatch = n;
+//    							}
+//    						}
+//    					}
+//    					if(drillPatch == null) {
+//    						myUnit.move(self.getStartLocation().toPosition());
+//    					} else if((myUnit.isUnderAttack() && myUnit.getHitPoints() + myUnit.getShields() <= 32)
+//    						|| myUnit.getPosition().getApproxDistance(drillPatch.getPosition()) >= 8*32) {
+//    						myUnit.gather(drillPatch);
+//    					} else if(myUnit.getLastCommand().getUnitCommandType() != UnitCommandType.Attack_Unit) {
+//    						if(game.getUnitsOnTile(myUnit.getTilePosition()).size() > 5 || self.completedUnitCount(UnitType.Protoss_Probe) <= 5) {
+//		    					
 //		    					for(Unit n: game.getNeutralUnits()) {
 //		    						if(n.getType().isResourceContainer()
 //		    							&& !BWTA.getRegion(n.getPosition()).equals(BWTA.getRegion(self.getStartLocation()))) {
@@ -2540,12 +2541,12 @@ public class GuiBot extends DefaultBWListener {
 //		    							}
 //		    						}
 //		    					}
-		    					myUnit.attack(closestEnemy);
-		    				} else {
-		    					myUnit.gather(drillPatch);
-		    				}	    					
-    					}
-	    			}
+//		    					myUnit.attack(closestEnemy);
+//		    				} else {
+//		    					myUnit.gather(drillPatch);
+//		    				}	    					
+//    					}
+//	    			}
 	    		}
     		}
     	}    	

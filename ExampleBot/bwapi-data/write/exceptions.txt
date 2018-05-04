@@ -6600,3 +6600,5 @@ vs Surtur Brood (Zerg) on(4)Roadrunner.scx
 166
 vs Grendel Brood (Zerg) on(4)Roadrunner.scx
 147
+vs Akilae Tribe (Protoss) on(4)Icarus.scm
+159
