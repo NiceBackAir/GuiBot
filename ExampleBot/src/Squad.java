@@ -55,16 +55,16 @@ public class Squad {
 		command = UnitState.HOLDING;
 		Iterator<MyUnit> itr = units.iterator();
 		MyUnit myUnit;
+		center = findCenter();
 		while(itr.hasNext()) {
 			myUnit = itr.next();
 			if(myUnit.getUnit().exists()) {
 				myUnit.blockChoke(choke);
-				game.drawCircleMap(myUnit.getPosition(), 16, Color.Red);
+//				game.drawCircleMap(myUnit.getPosition(), 16, Color.Red);
 			} else {
 				itr.remove();
 			}
 		}
-		center = findCenter();
 	}
 	public void attack(Position attackPosition, int range) throws Exception {
 		objective = attackPosition;
@@ -105,8 +105,8 @@ public class Squad {
 				groupUp(center);
 			}			
 		}
-		game.drawCircleMap(objective,range, Color.Red);
-		game.drawLineMap(objective, center, Color.Green);
+//		game.drawCircleMap(objective,range, Color.Red);
+//		game.drawLineMap(objective, center, Color.Green);
 	}
 	public void contain(Position pos, int range) throws Exception {
 		objective = pos;
@@ -147,10 +147,15 @@ public class Squad {
 		Position center = findCenter();
 		while(itr.hasNext()) {
 			myUnit = itr.next();
-			if(myUnit.getPosition().getApproxDistance(center) >= 10*32) {
-				myUnit.move(center);
+			if(myUnit.getUnit().exists()) {
+				if(myUnit.getPosition().getApproxDistance(center) >= 10*32-16
+					&& GuiBot.walkMap[center.toTilePosition().getX()][center.toTilePosition().getY()] <= 0) {
+					myUnit.move(center);
+				}
+//				game.drawCircleMap(myUnit.getPosition(),16, Color.White);
+			} else {
+				itr.remove();
 			}
-			game.drawCircleMap(myUnit.getPosition(),16, Color.White);
 		}
 	}
 	public Position findCenter() {

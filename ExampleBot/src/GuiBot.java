@@ -57,6 +57,7 @@ public class GuiBot extends DefaultBWListener {
     private UnitType nextItem;
     private int nextItemX;
     private int nextItemY;
+    private int pylonSkip;
     
     public static final int PIXELS_PER_TILE = 32;
     public static final float SECONDS_PER_FRAME = 0.042f;
@@ -257,6 +258,8 @@ public class GuiBot extends DefaultBWListener {
 		    	   		freeAgents.add(new Zealot(unit, game));
 		    		else if(unit.getType() == UnitType.Protoss_Dragoon)
 		    			freeAgents.add(new Dragoon(unit, game));
+		    		else if(unit.getType() == UnitType.Protoss_High_Templar)
+		    			freeAgents.add(new HighTemplar(unit, game));
 		    		else if(unit.getType() == UnitType.Protoss_Probe) {
 		    			newWorkers.add(new Probe(unit, game));
 		    		}
@@ -325,6 +328,8 @@ public class GuiBot extends DefaultBWListener {
         nextItem = null;
         nextItemX = 0;
         nextItemY = 0;
+        //used for filling up space in late game with pylons
+        pylonSkip = 0;
         
         saveFor = null;
         saveForIndex = 0;
@@ -816,13 +821,6 @@ public class GuiBot extends DefaultBWListener {
     				enemyArmy.get(hisUnit.getID()).update();
         	}
         	if(hisUnit.isVisible()) {
-        		//add tech to the list
-        		for(TechType t: hisUnit.getType().abilities()) {
-        			if(hisUnit.canUseTech(t)) {
-        				enemyResearchTab.add(t);
-        				game.sendText(""+t);
-        			}
-        		}
 	        	//for some reason, the game remembers enemy positions from past games, so gotta check if explored
 	        	if (game.isExplored(hisUnit.getTilePosition()) && hisUnit.getType().isResourceDepot()) {
 	        		for(TilePosition t: game.getStartLocations()) {
@@ -992,7 +990,7 @@ public class GuiBot extends DefaultBWListener {
             if (myUnit.getType() == UnitType.Protoss_Templar_Archives) {
             	if(!self.hasResearched(TechType.Psionic_Storm))
             		prepareUpgrade(myUnit, TechType.Psionic_Storm);
-            	else
+            	else if(self.allUnitCount(UnitType.Protoss_High_Templar) >= 4)
             		prepareUpgrade(myUnit, UpgradeType.Khaydarin_Amulet);
         	}
         }
@@ -1999,9 +1997,9 @@ public class GuiBot extends DefaultBWListener {
     	game.drawLineMap(new Position(attackPosition.getX() + 5,  attackPosition.getY() - 5), 
         	new Position(attackPosition.getX() - 5,  attackPosition.getY() + 5), Color.Red);
         
-    	int range = 8*32+16;
+    	int range = 9*32;
     	if(enemyBuildingTab.containsKey(UnitType.Terran_Siege_Tank_Siege_Mode))
-    		range = 13*32+16;
+    		range = 14*32;
     	//army commands go here
     	
     	//probe pulling
@@ -2010,7 +2008,7 @@ public class GuiBot extends DefaultBWListener {
     	for(Region r: bases.keySet()) {
     		base = bases.get(r);
     		workers = base.getWorkers();
-    		if(base.isUnderAttack() && attackPosition.getApproxDistance(base.getWorkers().findCenter())< 8*32) {
+    		if(workers.getUnits().size() > 0 && base.isUnderAttack() && attackPosition.getApproxDistance(base.getWorkers().findCenter())< 8*32) {
     	        workers.setObjective(attackPosition);
     			workers.attack(range);
     		} else if(workers.getCommand() != UnitState.MINING) {
@@ -2029,7 +2027,7 @@ public class GuiBot extends DefaultBWListener {
     		if(squad.getUnits().size() > 0) {
     			center = squad.findCenter();
 		    	if(squad.getUnits().size() >= 12 || squad.getCommand() == UnitState.ATTACKING
-		    		|| aBaseIsUnderAttack
+		    		|| self.supplyUsed() == 400 || aBaseIsUnderAttack
 	//	    		|| (center.getApproxDistance(squad.getObjective()) < 10*32 && squad.getUnitCount(UnitType.Protoss_Zealot) == 0)
 		    		|| (enemyRace == Race.Terran && !enemyBuildingTab.containsKey(UnitType.Terran_Siege_Tank_Siege_Mode)
 		    		&& !enemyArmyTab.containsKey(UnitType.Terran_Medic) && game.enemy().getUpgradeLevel(UpgradeType.Ion_Thrusters) == 0)) {
@@ -2098,7 +2096,8 @@ public class GuiBot extends DefaultBWListener {
         	closestCloaked = null;
         	weakestAirEnemy = null;
     		if(myUnit.isCompleted() && !myUnit.getType().isBuilding() && !myUnit.getType().isWorker()
-    			&& myUnit.getType() != UnitType.Protoss_Zealot && myUnit.getType() != UnitType.Protoss_Dragoon) {
+    			&& myUnit.getType() != UnitType.Protoss_Zealot && myUnit.getType() != UnitType.Protoss_Dragoon
+    			&& myUnit.getType() != UnitType.Protoss_High_Templar && myUnit.getType() != UnitType.Protoss_Archon) {
 				for(Unit hisUnit: myUnit.getUnitsInRadius(myUnit.getType().sightRange())) { 				
 					if(hisUnit.getPlayer().equals(game.enemy()) && hisUnit.isVisible(self) && hisUnit.isDetected() && !hisUnit.isInvincible() 					
 						&& (!hisUnit.getType().isBuilding() || hisUnit.getType().canAttack() || hisUnit.getType() == UnitType.Terran_Bunker)
@@ -2435,76 +2434,76 @@ public class GuiBot extends DefaultBWListener {
 //    				} else {
 //    					scout(myUnit);
 //    				}		    				    		
-	    		} else if(myUnit.getType() == UnitType.Protoss_High_Templar) {  
-	    			boolean gotCommand = false;
-	    			if(myUnit.getEnergy() < 75 || !self.hasResearched(TechType.Psionic_Storm)) {
-	    				myUnit.move(self.getStartLocation().toPosition());
-	    				gotCommand = true;
-	    			} else if (canStorm) {
-	    				HashMap<TilePosition, Double> stormMap = new HashMap<TilePosition, Double>();
-	    				TilePosition tempTile = null;
-	    				int playerFactor;
-	    				double tileFactor;
-	    				double cloakFactor;
-	    				for (Unit u: myUnit.getUnitsInRadius(9*PIXELS_PER_TILE)) {
-	    					if(!u.getType().isBuilding() && !u.isUnderStorm() && u.getType() != UnitType.Zerg_Larva
-	    						&& u.getType() != UnitType.Zerg_Egg) {
-	    						
-	    						playerFactor = 0;
-	    						tileFactor = 1;
-	    						cloakFactor = 1;
-	    						
-	    						if(u.getPlayer() == game.enemy()) {
-	    							playerFactor = 1;
-	    							if(!u.isDetected() && u.isVisible()) {
-	    								cloakFactor = 2;
-	    							}
-	    						} else if(u.getPlayer() == self) {
-	    							playerFactor = -1;
-	    						}
-	    						
-	    						for(int x = -1; x<=1; x++) {
-	    							for(int y = -1; y<=1; y++) {
-	    								if(x==0 && y== 0) {
-	    									tileFactor = 1;
-	    								} else {
-	    									tileFactor = 0.8;
-	    								}
-	    								tempTile = new TilePosition(u.getTilePosition().getX() +x, u.getTilePosition().getY() + y);
-	        							if(stormMap.get(tempTile) == null) {
-	        								stormMap.put(tempTile, playerFactor*tileFactor*cloakFactor);
-	        							} else {
-	        								stormMap.replace(tempTile, stormMap.get(tempTile) + playerFactor*tileFactor*cloakFactor);
-	        							}
-	    							}
-	    						}
-
-	    					}
-	    				}
-	    				
-	    				//find the best storm spot
-	    				TilePosition stormLocation = null;
-	    				double mostCasualties = 0;
-	    				for(Map.Entry<TilePosition, Double> entry: stormMap.entrySet()) {
-	    					//set storm minimum here
-	    					if(entry.getValue() >= 3.5 && entry.getValue() > mostCasualties) {
-	    						mostCasualties = entry.getValue();
-	    						stormLocation = entry.getKey();
-	    					}
-	    				}
-	    				if(stormLocation != null) {
-	    					myUnit.useTech(TechType.Psionic_Storm, new Position(stormLocation.getX()*32 + 16, stormLocation.getY()*32 + 16));
-	    					gotCommand = true;
-	    				}
-	    			}
-	    			if(!gotCommand) {
-		    			if (closestEnemy != null && !closestEnemy.getType().groundWeapon().equals(WeaponType.None)
-		    		    	&& closestEnemy.getDistance(myUnit) < game.enemy().weaponMaxRange(closestEnemy.getType().groundWeapon()) + 32) {
-		    				myUnit.move(self.getStartLocation().toPosition());
-		    			} else {
-		    				myUnit.move(attackPosition);
-		    			}
-	    			}
+//	    		} else if(myUnit.getType() == UnitType.Protoss_High_Templar) {  
+//	    			boolean gotCommand = false;
+//	    			if(myUnit.getEnergy() < 75 || !self.hasResearched(TechType.Psionic_Storm)) {
+//	    				myUnit.move(self.getStartLocation().toPosition());
+//	    				gotCommand = true;
+//	    			} else if (canStorm) {
+//	    				HashMap<TilePosition, Double> stormMap = new HashMap<TilePosition, Double>();
+//	    				TilePosition tempTile = null;
+//	    				int playerFactor;
+//	    				double tileFactor;
+//	    				double cloakFactor;
+//	    				for (Unit u: myUnit.getUnitsInRadius(9*PIXELS_PER_TILE)) {
+//	    					if(!u.getType().isBuilding() && !u.isUnderStorm() && u.getType() != UnitType.Zerg_Larva
+//	    						&& u.getType() != UnitType.Zerg_Egg) {
+//	    						
+//	    						playerFactor = 0;
+//	    						tileFactor = 1;
+//	    						cloakFactor = 1;
+//	    						
+//	    						if(u.getPlayer() == game.enemy()) {
+//	    							playerFactor = 1;
+//	    							if(!u.isDetected() && u.isVisible()) {
+//	    								cloakFactor = 2;
+//	    							}
+//	    						} else if(u.getPlayer() == self) {
+//	    							playerFactor = -1;
+//	    						}
+//	    						
+//	    						for(int x = -1; x<=1; x++) {
+//	    							for(int y = -1; y<=1; y++) {
+//	    								if(x==0 && y== 0) {
+//	    									tileFactor = 1;
+//	    								} else {
+//	    									tileFactor = 0.8;
+//	    								}
+//	    								tempTile = new TilePosition(u.getTilePosition().getX() +x, u.getTilePosition().getY() + y);
+//	        							if(stormMap.get(tempTile) == null) {
+//	        								stormMap.put(tempTile, playerFactor*tileFactor*cloakFactor);
+//	        							} else {
+//	        								stormMap.replace(tempTile, stormMap.get(tempTile) + playerFactor*tileFactor*cloakFactor);
+//	        							}
+//	    							}
+//	    						}
+//
+//	    					}
+//	    				}
+//	    				
+//	    				//find the best storm spot
+//	    				TilePosition stormLocation = null;
+//	    				double mostCasualties = 0;
+//	    				for(Map.Entry<TilePosition, Double> entry: stormMap.entrySet()) {
+//	    					//set storm minimum here
+//	    					if(entry.getValue() >= 3.5 && entry.getValue() > mostCasualties) {
+//	    						mostCasualties = entry.getValue();
+//	    						stormLocation = entry.getKey();
+//	    					}
+//	    				}
+//	    				if(stormLocation != null) {
+//	    					myUnit.useTech(TechType.Psionic_Storm, new Position(stormLocation.getX()*32 + 16, stormLocation.getY()*32 + 16));
+//	    					gotCommand = true;
+//	    				}
+//	    			}
+//	    			if(!gotCommand) {
+//		    			if (closestEnemy != null && !closestEnemy.getType().groundWeapon().equals(WeaponType.None)
+//		    		    	&& closestEnemy.getDistance(myUnit) < game.enemy().weaponMaxRange(closestEnemy.getType().groundWeapon()) + 32) {
+//		    				myUnit.move(self.getStartLocation().toPosition());
+//		    			} else {
+//		    				myUnit.move(attackPosition);
+//		    			}
+//	    			}
 //	    			game.drawTextMap(myUnit.getPosition(), myUnit.getSpellCooldown()+"");
 	    		} else if(myUnit.getType() == UnitType.Protoss_Probe && myUnit != scoutingProbe) {
 	    			if(closestEnemy != null && (!closestEnemy.getType().groundWeapon().equals(WeaponType.None) || closestEnemy.getType().isSpellcaster()
@@ -2654,7 +2653,7 @@ public class GuiBot extends DefaultBWListener {
 		if(bestTile == null) {
 	    	if(nextItem == UnitType.Protoss_Pylon) {
 		    	for(int x = baseTile.getX() - 2; x <= baseTile.getX() + 4; x +=6) {
-		        	for(int y = baseTile.getY() - 2; y <= baseTile.getY() + 4; y +=2) {	  
+		        	for(int y = baseTile.getY() - 2; y <= baseTile.getY() + 4; y +=2) {	
 		        		nextTile = new TilePosition(x,y);
 		        		buildingCenter = new Position(nextTile.toPosition().getX() + nextItem.tileWidth()*16
 								, nextTile.toPosition().getY() + nextItem.tileHeight()*16);	
@@ -2665,10 +2664,11 @@ public class GuiBot extends DefaultBWListener {
 	            		}
 		        	}
 		    	}	    	
-		    	if(bestTile == null) {	    		
+		    	if(bestTile == null) {	   
 		    		//build a spotter pylon
-			    	for(int x = baseTile.getX() - 38; x <= baseTile.getX() + 42; x += 7) {
-			        	for(int y = baseTile.getY() - 39; y <= baseTile.getY() + 41; y += 4) {	 
+			    	for(int x = baseTile.getX() - 42 + pylonSkip; x <= baseTile.getX() + 42; x += 5) {
+			        	for(int y = baseTile.getY() - 45; y <= baseTile.getY() + 43; y += 6) {	
+			        		
 			        		nextTile = new TilePosition(x,y);
 			        		buildingCenter = new Position(nextTile.toPosition().getX() + nextItem.tileWidth()*16
 									, nextTile.toPosition().getY() + nextItem.tileHeight()*16);	
@@ -2678,14 +2678,10 @@ public class GuiBot extends DefaultBWListener {
 				    			bestTile = nextTile;
 				    			bestPosition = buildingCenter;
 				    		}
-//				    		if(BWTA.getRegion(baseTile).getPolygon().isInside(nextPosition) && game.canBuildHere(nextTile, nextItem) &&
-//				    			(bestTile == null || baseTile.getDistance(nextTile) > baseTile.getDistance(bestTile))) {
-//				    			
-//				    			bestTile = nextTile;
-//				    			bestPosition = buildingCenter;
-//				    		}
 			        	}
 		    		}
+			    	if(bestTile == null)
+			    		pylonSkip = 2;
 		    	}
 	    	} else if (nextItem == UnitType.Protoss_Assimilator) {
 	    		//can be optimized
@@ -2719,11 +2715,16 @@ public class GuiBot extends DefaultBWListener {
 	            	}
 	            }   
 	    	} else {
+	    		int xAdjust = 0;
+	    		//all other buildings
 		    	for(int x = baseTile.getX() - 6; x <= baseTile.getX() + 8; x +=4) {
-		        	for(int y = baseTile.getY() - 6; y <= baseTile.getY() + 8; y +=3) {	        	
+		        	for(int y = baseTile.getY() - 6; y <= baseTile.getY() + 8; y +=3) {	      
+		        		xAdjust = x;
+		        		if(x <= baseTile.getX() - 2)
+		        			xAdjust = x + 4-nextItem.tileWidth();
 		        		//don't place big buildings right next to nexus
 		        		if(!(Math.abs(x-baseTile.getX()) <= 4 && Math.abs(y-baseTile.getY()) <= 3)) {
-			        		nextTile = new TilePosition(x,y);
+			        		nextTile = new TilePosition(xAdjust,y);
 			        		buildingCenter = new Position(nextTile.toPosition().getX() + nextItem.tileWidth()*16
 									, nextTile.toPosition().getY() + nextItem.tileHeight()*16);	
 			        		
@@ -2736,8 +2737,8 @@ public class GuiBot extends DefaultBWListener {
 		    	}
 		    	if(bestTile == null) {
 		    		//build a building close to nexus
-			    	for(int x = baseTile.getX() - 42; x <= baseTile.getX() + 42; x += 7) {
-			        	for(int y = baseTile.getY() - 47; y <= baseTile.getY() + 45; y += 4) {	 
+			    	for(int x = baseTile.getX() - 42; x <= baseTile.getX() + 42; x += 5) {
+			        	for(int y = baseTile.getY() - 49; y <= baseTile.getY() + 45; y += 6) {	 
 			        		if(!(Math.abs(x-baseTile.getX()) <= 4 && Math.abs(y-baseTile.getY()) <= 3)) {
 				        		nextTile = new TilePosition(x,y);
 				        		nextPosition = nextTile.toPosition();

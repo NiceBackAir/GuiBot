@@ -34,7 +34,6 @@ public class MyBase {
 		resources.clear();
 		buildings.clear();
 		isUnderAttack = false;
-		workers.resumeMining();
 	}
 	
 	public void addBuilding(Unit u) {

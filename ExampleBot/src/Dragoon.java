@@ -19,7 +19,7 @@ public class Dragoon extends MyUnit {
 	public void attack(Position pos, boolean attackBuildings) throws Exception {
 		target = getTarget(attackBuildings);
 		if(u.isStuck())
-			game.sendText("stuck");	
+			game.drawTextMap(u.getPosition(),"stuck");
 		if(target != null) {
 			if(isFree(target)) {
 				if(u.getGroundWeaponCooldown() == 0 || u.getGroundWeaponCooldown() >= 25) {
@@ -57,7 +57,7 @@ public class Dragoon extends MyUnit {
 			} else {
 //				game.drawTextMap(u.getPosition(), "charging");
 			}
-		} else if(isFree(attackBuildings)) {
+		} else if(isFree()) {
 //			if((u.getLastCommand().getUnitCommandType() != UnitCommandType.Attack_Move
 //				&& !u.getLastCommand().getTargetPosition().equals(pos))
 //				|| u.getGroundWeaponCooldown() == 0)

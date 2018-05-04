@@ -5,6 +5,7 @@ import bwapi.PositionedObject;
 import bwapi.Unit;
 import bwapi.UnitCommandType;
 import bwapi.UnitType;
+import bwapi.WeaponType;
 import bwta.BWTA;
 import bwta.Chokepoint;
 
@@ -20,6 +21,7 @@ public class MyUnit extends PositionedObject {
 	protected boolean gotCommand;
 	protected Game game;
 	protected int cancelFrames;
+	protected Position techPosition;
 	
 	public static MyUnit createFrom(Unit u, Game game) {
 		if (u == null) {
@@ -36,6 +38,7 @@ public class MyUnit extends PositionedObject {
 		this.game = game;
 		this.u = u;
 		scale = 5*32;
+		techPosition = null;
 		//stupid goon cancel frames
 		cancelFrames = 0;
 	}
@@ -90,7 +93,7 @@ public class MyUnit extends PositionedObject {
 			} else {
 //				game.drawTextMap(u.getPosition(), "busy");
 			}
-		} else if(isFree(attackBuildings)) {
+		} else if(isFree()) {
 //			if((u.getLastCommand().getUnitCommandType() != UnitCommandType.Attack_Move
 //				&& !u.getLastCommand().getTargetPosition().equals(pos))
 //				|| u.getGroundWeaponCooldown() == 0)
@@ -116,16 +119,14 @@ public class MyUnit extends PositionedObject {
 //	}
 	public boolean[] holdPosition() throws Exception {
 		target = getTarget(false);
-		if(isFree(true) && !u.isHoldingPosition()) {
+		if(isFree() && !u.isHoldingPosition()) {
 			u.holdPosition();
 		}
 		return null;
 	}
 	public boolean[] move(Position pos) throws Exception {
 		target = null;
-		if(isFree(true)) {
-			u.move(pos);
-		}
+		u.move(pos);
 		return null;
 	}
 	public void moveAwayFrom(Position pos) throws Exception {
@@ -197,8 +198,8 @@ public class MyUnit extends PositionedObject {
 		target = getTarget(false);
 //		if(u.isStuck()) 
 //			game.sendText("stuck");	
-		if(choke != null && isFree(false)) {
-			if(game.self().weaponMaxRange(u.getType().groundWeapon()) <= 3*32
+		if(choke != null && isFree()) {
+			if(u.getType().groundWeapon() != WeaponType.None && game.self().weaponMaxRange(u.getType().groundWeapon()) <= 3*32
 				&& GuiBot.intersects(u.getType(), u.getPosition(), choke.getSides().first, choke.getSides().second)) {
 				//melee units can wall
 				if(!u.isHoldingPosition())
@@ -241,7 +242,7 @@ public class MyUnit extends PositionedObject {
 		return closestEnemy;
 	}
 	//default check to see if unit's attack will not be interrupted with another command. Good for zealots, DTs, and Archons
-	public boolean isFree(boolean attackBuildings) throws Exception {
+	public boolean isFree() throws Exception {
 		if(u.isLoaded())
 			return false;	
 		if(u.getGroundWeaponCooldown() < u.getType().groundWeapon().damageCooldown()-cancelFrames-1 && u.getGroundWeaponCooldown() > 0)
