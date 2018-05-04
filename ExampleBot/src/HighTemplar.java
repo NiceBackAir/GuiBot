@@ -29,8 +29,8 @@ public class HighTemplar extends MyUnit {
 				u.useTech(TechType.Psionic_Storm, techPosition);
 //			 else
 //				u.move(techPosition);
-			game.sendText("storm");
-			game.drawTextMap(u.getPosition(),""+u.getSpellCooldown());
+//			game.sendText("storm");
+//			game.drawTextMap(u.getPosition(),""+u.getSpellCooldown());
 		} else {
 			if(u.getPosition().getApproxDistance(pos) < u.getType().sightRange()) {
 				moveAwayFrom(pos);
