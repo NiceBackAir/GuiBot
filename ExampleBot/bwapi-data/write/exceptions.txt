@@ -6602,3 +6602,101 @@ vs Grendel Brood (Zerg) on(4)Roadrunner.scx
 147
 vs Akilae Tribe (Protoss) on(4)Icarus.scm
 159
+vs Baelrog Brood (Zerg) on(3)Neo Moon Glaive.scx
+141
+vs Grendel Brood (Zerg) on(3)Neo Moon Glaive.scx
+vs Venatir Tribe (Protoss) on(4)Icarus.scm
+151
+vs Auriga Tribe (Protoss) on(4)Icarus.scm
+147
+vs Furinax Tribe (Protoss) on(4)Icarus.scm
+156
+vs Venatir Tribe (Protoss) on(4)Icarus.scm
+149
+vs Sargas Tribe (Protoss) on(4)Icarus.scm
+152
+vs Shelak Tribe (Protoss) on(4)Icarus.scm
+153
+vs Furinax Tribe (Protoss) on(4)Icarus.scm
+150
+vs Velari Tribe (Protoss) on(4)Icarus.scm
+149
+vs Ara Tribe (Protoss) on(4)Icarus.scm
+150
+vs Furinax Tribe (Protoss) on(4)Icarus.scm
+156
+vs Velari Tribe (Protoss) on(4)Icarus.scm
+155
+vs Venatir Tribe (Protoss) on(4)Icarus.scm
+154
+vs Ara Tribe (Protoss) on(4)Icarus.scm
+156
+vs Furinax Tribe (Protoss) on(4)Icarus.scm
+vs Velari Tribe (Protoss) on(4)Icarus.scm
+151
+vs Auriga Tribe (Protoss) on(4)Icarus.scm
+vs Auriga Tribe (Protoss) on(4)Icarus.scm
+146
+vs Venatir Tribe (Protoss) on(4)Icarus.scm
+152
+vs Sargas Tribe (Protoss) on(4)Icarus.scm
+155
+vs Velari Tribe (Protoss) on(4)Andromeda.scx
+155
+vs Furinax Tribe (Protoss) on(4)Andromeda.scx
+154
+vs Velari Tribe (Protoss) on(4)Andromeda.scx
+155
+vs Auriga Tribe (Protoss) on(4)Andromeda.scx
+vs Ara Tribe (Protoss) on(4)Fighting Spirit.scx
+vs Shelak Tribe (Protoss) on(4)Fighting Spirit.scx
+150
+vs Ara Tribe (Protoss) on(4)Fighting Spirit.scx
+152
+vs Velari Tribe (Protoss) on(4)Fighting Spirit.scx
+148
+vs Furinax Tribe (Protoss) on(4)Fighting Spirit.scx
+vs Ara Tribe (Protoss) on(4)Roadrunner.scx
+98
+vs Velari Tribe (Protoss) on(4)Roadrunner.scx
+157
+vs Akilae Tribe (Protoss) on(4)Roadrunner.scx
+151
+vs Furinax Tribe (Protoss) on(4)Roadrunner.scx
+157
+vs Sargas Tribe (Protoss) on(4)Roadrunner.scx
+152
+vs Auriga Tribe (Protoss) on(4)Roadrunner.scx
+151
+vs Akilae Tribe (Protoss) on(4)Roadrunner.scx
+151
+vs Sargas Tribe (Protoss) on(4)Python.scx
+151
+vs Shelak Tribe (Protoss) on(4)Python.scx
+152
+vs Sargas Tribe (Protoss) on(4)Python.scx
+147
+vs Akilae Tribe (Protoss) on(4)Python.scx
+149
+vs Furinax Tribe (Protoss) on(4)Python.scx
+150
+vs Velari Tribe (Protoss) on(4)Python.scx
+149
+vs Auriga Tribe (Protoss) on(4)Python.scx
+151
+vs Ara Tribe (Protoss) on(4)Python.scx
+149
+vs Sargas Tribe (Protoss) on(4)Python.scx
+vs Velari Tribe (Protoss) on(4)Python.scx
+151
+vs Akilae Tribe (Protoss) on(4)Python.scx
+151
+vs Venatir Tribe (Protoss) on(4)Python.scx
+151
+vs Ara Tribe (Protoss) on(4)Python.scx
+153
+vs Leviathan Brood (Zerg) on(4)Python.scx
+vs Garm Brood (Zerg) on(4)Python.scx
+vs Grendel Brood (Zerg) on(4)Python.scx
+vs Leviathan Brood (Zerg) on(4)Python.scx
+vs Grendel Brood (Zerg) on(4)Python.scx

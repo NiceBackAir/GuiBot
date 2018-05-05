@@ -5,6 +5,8 @@ import java.util.Iterator;
 import bwapi.Color;
 import bwapi.Game;
 import bwapi.Position;
+import bwapi.Race;
+import bwapi.TechType;
 import bwapi.Unit;
 import bwapi.UnitCommandType;
 import bwapi.UnitType;
@@ -35,6 +37,7 @@ public class Squad {
 	
 	public void add(MyUnit myUnit) {
 		units.add(myUnit);		
+		myUnit.setSquad(this);
 	}
 	
 	public void command(UnitState myCommand, Position pos, int range) {
@@ -56,11 +59,23 @@ public class Squad {
 		Iterator<MyUnit> itr = units.iterator();
 		MyUnit myUnit;
 		center = findCenter();
+
 		while(itr.hasNext()) {
 			myUnit = itr.next();
+			
+			//merge excess archons
+			if(GuiBot.enemyRace != Race.Terran && game.self().completedUnitCount(UnitType.Protoss_High_Templar) > 6) {
+				for(MyUnit u: units) {
+					u = itr.next();
+					if(!u.gotCommand && u.getUnit().getType() == UnitType.Protoss_High_Templar) {
+						mergeArchon(u);
+					}
+				}
+			}
+			
 			if(myUnit.getUnit().exists()) {
 				myUnit.blockChoke(choke);
-//				game.drawCircleMap(myUnit.getPosition(), 16, Color.Red);
+				game.drawCircleMap(myUnit.getPosition(), 16, Color.Red);
 			} else {
 				itr.remove();
 			}
@@ -75,6 +90,7 @@ public class Squad {
 		command = UnitState.ATTACKING;
 		radius = range;
 		center = findCenter();
+//		System.out.println(objective + " " + center);
 		boolean attackBuildings = true;
 		for(Unit hisUnit: game.getUnitsInRadius(objective, range)) {
 			if(hisUnit.getPlayer() == game.enemy() && hisUnit.isDetected() && !hisUnit.isInvincible()
@@ -86,8 +102,17 @@ public class Squad {
 				break;
 			}				
 		}
-		Iterator<MyUnit> itr = units.iterator();
+
 		MyUnit myUnit;
+		
+		//merge archons
+		for(MyUnit u: units) {
+			if(!u.gotCommand && u.getUnit().getType() == UnitType.Protoss_High_Templar && u.getUnit().getEnergy() < 75) {
+				mergeArchon(u);
+			}
+		}
+		
+		Iterator<MyUnit> itr = units.iterator();
 		if(isStaged(objective, range)) {
 			while(itr.hasNext()) {
 				myUnit = itr.next();
@@ -102,12 +127,34 @@ public class Squad {
 			if(isTogether() || objective.getApproxDistance(center) < 15*32) {
 				contain(objective, range);
 			} else {
-				groupUp(center);
+				groupUp();
 			}			
 		}
-//		game.drawCircleMap(objective,range, Color.Red);
-//		game.drawLineMap(objective, center, Color.Green);
+		game.drawCircleMap(objective,range, Color.Red);
+		game.drawLineMap(objective, center, Color.Green);
 	}
+	
+	public void mergeArchon(MyUnit myUnit) {
+		MyUnit closestTemplar = null;
+		for(MyUnit otherUnit: units) {
+			if(otherUnit.getUnit().getType() == UnitType.Protoss_High_Templar && !otherUnit.equals(myUnit)
+				&& otherUnit.getUnit().getEnergy() < 75 || game.self().completedUnitCount(UnitType.Protoss_High_Templar) > 6) {
+				
+				if(closestTemplar == null || myUnit.getPosition().getApproxDistance(otherUnit.getPosition())
+					< myUnit.getPosition().getApproxDistance(closestTemplar.getPosition())) {
+					
+					closestTemplar = otherUnit;
+				}
+			}
+		}
+		if(closestTemplar != null) {
+			myUnit.getUnit().useTech(TechType.Archon_Warp, closestTemplar.getUnit());
+			myUnit.setCommandGiven(true);
+			closestTemplar.getUnit().useTech(TechType.Archon_Warp, myUnit.getUnit());
+			closestTemplar.setCommandGiven(true);
+		}
+	}
+	
 	public void contain(Position pos, int range) throws Exception {
 		objective = pos;
 		Iterator<MyUnit> itr = units.iterator();
@@ -141,23 +188,28 @@ public class Squad {
 				myUnit.getUnit().stop();
 		}
 	}
-	public void groupUp(Position pos) throws Exception {
+	
+	
+	public void groupUp() throws Exception {
 		Iterator<MyUnit> itr = units.iterator();
 		MyUnit myUnit;
-		Position center = findCenter();
+		center = findCenter();
 		while(itr.hasNext()) {
 			myUnit = itr.next();
 			if(myUnit.getUnit().exists()) {
 				if(myUnit.getPosition().getApproxDistance(center) >= 10*32-16
 					&& GuiBot.walkMap[center.toTilePosition().getX()][center.toTilePosition().getY()] <= 0) {
 					myUnit.move(center);
+				} else {
+					myUnit.move(objective);
 				}
-//				game.drawCircleMap(myUnit.getPosition(),16, Color.White);
+				game.drawCircleMap(myUnit.getPosition(),16, Color.White);
 			} else {
 				itr.remove();
 			}
 		}
 	}
+	
 	public Position findCenter() {
 		unitTab = new HashMap<UnitType, Integer>();
 		UnitType type = null;
@@ -178,6 +230,7 @@ public class Squad {
 			} else {
 				unitTab.put(type, 1);
 			}
+//			game.drawTextMap(myUnit.getPosition(), ""+myUnit.getSquad());
 		}
 		if(units == 0) 
 			return null;
@@ -186,8 +239,8 @@ public class Squad {
 		centerY /= units;
 
 		center = new Position(centerX, centerY);
-//		game.drawCircleMap(new Position(centerX, centerY), 3, Color.Green);
-//		game.drawTextMap(new Position(centerX, centerY), ""+units);
+		game.drawCircleMap(new Position(centerX, centerY), 3, Color.Green);
+		game.drawTextMap(new Position(centerX, centerY), ""+units);
 		
 		return center;		
 	}
@@ -205,10 +258,14 @@ public class Squad {
 	}
 	public void takeUnit(MyUnit u, Iterator<MyUnit> itr) {
 		units.add(u);
+		u.setSquad(this);
 		itr.remove();
 	}
 	public void takeAllUnits(Squad squad) {
 		units.addAll(squad.getUnits());
+		for(MyUnit u: squad.getUnits()) {
+			u.setSquad(this);
+		}
 		squad.clearUnits();
 	}
 	public void removeUnit(MyUnit u) {

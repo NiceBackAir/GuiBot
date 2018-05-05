@@ -33,7 +33,7 @@ public class GuiBot extends DefaultBWListener {
     private Game game;
 
     private Player self;
-    private Race enemyRace;
+    public static Race enemyRace;
     private HashMap<UnitType, Integer> enemyBuildingTab;
     private HashMap<UnitType, Integer> enemyCompletedBuildingTab;
     private HashMap<UnitType, Integer> enemyArmyTab;
@@ -43,6 +43,7 @@ public class GuiBot extends DefaultBWListener {
     private HashSet<TechType> enemyResearchTab;
     private HashMap<Integer, HisUnit> enemyBuildings;
     private HashMap<Integer, HisUnit> enemyArmy;
+    private HashMap<Integer, MyUnit> myUnits;
     private Squad freeAgents;
     private Squad mainArmy;
     private Squad newWorkers;
@@ -155,7 +156,13 @@ public class GuiBot extends DefaultBWListener {
 	        			enemiesKilledTab.put(unit.getType(), enemiesKilledTab.get(unit.getType())+1);
 	        	}
         	}
-        		
+        	
+        	//update list of MyUnits
+        	if(unit.getPlayer() == self) {
+        		if(myUnits.containsKey(unit.getID()))
+        			myUnits.remove(unit.getID());
+        	}
+        	
     		//crown a new bisu probe scout
 	    	if(scoutingProbe != null && unit.getID() == scoutingProbe.getID()) {
 	    		Unit p = null;
@@ -191,6 +198,21 @@ public class GuiBot extends DefaultBWListener {
     	}
     	if(unit.getType() == UnitType.Zerg_Drone) {
     		enemyArmy.remove(unit.getID());
+    	}
+    	
+    	
+    	//archon morphing
+    	if(unit.getPlayer() == self) {
+    		if(unit.getType() == UnitType.Protoss_Archon) {
+				if(myUnits.containsKey(unit.getID())) {
+					MyUnit templar = myUnits.get(unit.getID());
+					MyUnit archon = new Archon(unit, game);
+					templar.getSquad().add(archon);
+					templar.getSquad().removeUnit(templar);
+					myUnits.remove(unit.getID());
+					myUnits.put(unit.getID(), archon);
+				}
+    		}
     	}
     	//prevent weird stuff from happening when drone makes an extractor
 		if(unit.getType() == UnitType.Zerg_Extractor) {
@@ -254,14 +276,22 @@ public class GuiBot extends DefaultBWListener {
     	try {
 	    	if(game.getFrameCount() > 0) {
 		    	if(unit.getPlayer() == self) {
-		    		if(unit.getType() == UnitType.Protoss_Zealot) 
-		    	   		freeAgents.add(new Zealot(unit, game));
-		    		else if(unit.getType() == UnitType.Protoss_Dragoon)
-		    			freeAgents.add(new Dragoon(unit, game));
-		    		else if(unit.getType() == UnitType.Protoss_High_Templar)
-		    			freeAgents.add(new HighTemplar(unit, game));
-		    		else if(unit.getType() == UnitType.Protoss_Probe) {
-		    			newWorkers.add(new Probe(unit, game));
+		    		if(unit.getType() == UnitType.Protoss_Zealot) {
+		    			Zealot u = new Zealot(unit, game);
+		    	   		freeAgents.add(u);
+		        		myUnits.put(unit.getID(), u);
+		    		} else if(unit.getType() == UnitType.Protoss_Dragoon) {
+		    			Dragoon u = new Dragoon(unit, game);
+		    	   		freeAgents.add(u);
+		        		myUnits.put(unit.getID(), u);
+		    		} else if(unit.getType() == UnitType.Protoss_High_Templar) {
+		    			HighTemplar u = new HighTemplar(unit, game);
+		    	   		freeAgents.add(u);
+		        		myUnits.put(unit.getID(), u);
+		    		} else if(unit.getType() == UnitType.Protoss_Probe) {
+		    			Probe u = new Probe(unit, game);
+		    	   		newWorkers.add(u);
+		        		myUnits.put(unit.getID(), u);
 		    		}
 		    	}
 	    	}
@@ -314,6 +344,7 @@ public class GuiBot extends DefaultBWListener {
         enemyUpgradeTab = new HashMap<UpgradeType, Integer>();
         enemyBuildings = new HashMap<Integer, HisUnit>();
         enemyResearchTab = new HashSet<TechType>();
+        myUnits = new HashMap<Integer, MyUnit>();
         freeAgents = new Squad(game);
         mainArmy = new Squad(game);
         newWorkers = new Squad(game);
@@ -321,7 +352,9 @@ public class GuiBot extends DefaultBWListener {
         bases = new HashMap<Region, MyBase>();
         for(Unit u: self.getUnits()) {
         	if(u.getType() == UnitType.Protoss_Probe) {
-        		newWorkers.add(new MyUnit(u, game));
+        		Probe p = new Probe(u, game);
+        		newWorkers.add(p);
+        		myUnits.put(u.getID(), p);
         	}
         }
         
@@ -693,6 +726,11 @@ public class GuiBot extends DefaultBWListener {
         while(itr.hasNext()) {
         	r = itr.next();
         	bases.get(r).clear();
+        }
+        
+        for(int ID: myUnits.keySet()) {
+        	myUnits.get(ID).setCommandGiven(false);
+//        	game.drawTextMap(myUnits.get(ID).getPosition(), ""+myUnits.get(ID).getSquad());
         }
         
         //iterate through my units
@@ -1269,17 +1307,17 @@ public class GuiBot extends DefaultBWListener {
     	} else if(self.allUnitCount(UnitType.Protoss_Observatory) == 0) {
     		if(self.completedUnitCount(UnitType.Protoss_Robotics_Facility) > 0)    		
     			nextBuilding = UnitType.Protoss_Observatory;
-    	} else if(self.allUnitCount(UnitType.Protoss_Robotics_Support_Bay) == 0) {
-    		if(self.completedUnitCount(UnitType.Protoss_Robotics_Facility) > 0)     			
-    			nextBuilding = UnitType.Protoss_Robotics_Support_Bay; 		   		
-    	} else if(self.allUnitCount(UnitType.Protoss_Nexus) < 2) {
-    		nextBuilding = UnitType.Protoss_Nexus; 
-    	} else if(self.allUnitCount(UnitType.Protoss_Gateway) < 4) {
-    		nextBuilding = UnitType.Protoss_Gateway;   
-    	} else if(self.allUnitCount(UnitType.Protoss_Forge) == 0) {
-    		nextBuilding = UnitType.Protoss_Forge; 
-    	} else if(self.allUnitCount(UnitType.Protoss_Nexus) < 3) {
-    		nextBuilding = UnitType.Protoss_Nexus;   	
+//    	} else if(self.allUnitCount(UnitType.Protoss_Robotics_Support_Bay) == 0) {
+//    		if(self.completedUnitCount(UnitType.Protoss_Robotics_Facility) > 0)     			
+//    			nextBuilding = UnitType.Protoss_Robotics_Support_Bay; 		   		
+//    	} else if(self.allUnitCount(UnitType.Protoss_Nexus) < 2) {
+//    		nextBuilding = UnitType.Protoss_Nexus; 
+//    	} else if(self.allUnitCount(UnitType.Protoss_Gateway) < 4) {
+//    		nextBuilding = UnitType.Protoss_Gateway;   
+//    	} else if(self.allUnitCount(UnitType.Protoss_Forge) == 0) {
+//    		nextBuilding = UnitType.Protoss_Forge; 
+//    	} else if(self.allUnitCount(UnitType.Protoss_Nexus) < 3) {
+//    		nextBuilding = UnitType.Protoss_Nexus;   	
     	} else if(self.allUnitCount(UnitType.Protoss_Citadel_of_Adun) == 0) {    		
     		nextBuilding = UnitType.Protoss_Citadel_of_Adun;    
 		} else if(self.allUnitCount(UnitType.Protoss_Templar_Archives) == 0) {	        		
@@ -1654,8 +1692,8 @@ public class GuiBot extends DefaultBWListener {
 	    					threatVector[0] += -2*scale*hisRange/d/d*(hisUnit.getX()-myUnit.getX());
 	    					threatVector[1] += -2*scale*hisRange/d/d*(hisUnit.getY()-myUnit.getY());
 	    				} else {
-	    					threatVector[0] += -1*scale*hisRange/d/d*(hisUnit.getX()-myUnit.getX());
-	    					threatVector[1] += -1*scale*hisRange/d/d*(hisUnit.getY()-myUnit.getY());
+	    					threatVector[0] += -0.75*scale*hisRange/d/d*(hisUnit.getX()-myUnit.getX());
+	    					threatVector[1] += -0.75*scale*hisRange/d/d*(hisUnit.getY()-myUnit.getY());
 	    				}
 	    			} else if(myUnit.getType() == UnitType.Protoss_Observer
 	    				&& (!hisUnit.getType().airWeapon().equals(WeaponType.None) || hisUnit.getType().isDetector())) {		    				
@@ -1680,8 +1718,8 @@ public class GuiBot extends DefaultBWListener {
 	    			
 	    			if(myUnit.getType() == UnitType.Protoss_Corsair && hisUnit.isFlying()) {
 	    				myRange = self.weaponMaxRange(myUnit.getType().airWeapon());
-    					targetVector[0] += 1.1*scale*myRange/d/d*(hisUnit.getX()-myUnit.getX());
-    					targetVector[1] += 1.1*scale*myRange/d/d*(hisUnit.getY()-myUnit.getY());
+    					targetVector[0] += 1.25*scale*myRange/d/d*(hisUnit.getX()-myUnit.getX());
+    					targetVector[1] += 1.25*scale*myRange/d/d*(hisUnit.getY()-myUnit.getY());
 	    			}
 				}
     		}	
@@ -1968,7 +2006,7 @@ public class GuiBot extends DefaultBWListener {
 						}
 					}
 				}
-	    	}
+    		}
     		if(closestTurret != null && (center == null || game.hasPath(closestTurret.getPosition(), center))) {
     			//pick closest enemy/turret based on its location and range
     			if(closestSquishy != null && (center == null || closestSquishy.hasPath(center))) {
@@ -1989,9 +2027,9 @@ public class GuiBot extends DefaultBWListener {
 	    		squad.setObjective(attackPosition);
 	    	
 	    	game.drawLineMap(new Position(squad.getObjective().getX() - 5,  squad.getObjective().getY() - 5), 
-        		new Position(squad.getObjective().getX() + 5,  squad.getObjective().getY() + 5), Color.Red);
+        		new Position(squad.getObjective().getX() + 5,  squad.getObjective().getY() + 5), Color.Green);
         	game.drawLineMap(new Position(squad.getObjective().getX() + 5,  squad.getObjective().getY() - 5), 
-            	new Position(squad.getObjective().getX() - 5,  squad.getObjective().getY() + 5), Color.Red);
+            	new Position(squad.getObjective().getX() - 5,  squad.getObjective().getY() + 5), Color.Green);
     	}
     	game.drawLineMap(new Position(attackPosition.getX() - 5,  attackPosition.getY() - 5), 
     		new Position(attackPosition.getX() + 5,  attackPosition.getY() + 5), Color.Red);
@@ -2028,7 +2066,7 @@ public class GuiBot extends DefaultBWListener {
     		if(squad.getUnits().size() > 0) {
     			center = squad.findCenter();
 		    	if(squad.getUnits().size() >= 12 || squad.getCommand() == UnitState.ATTACKING
-		    		|| self.supplyUsed() == 400 || aBaseIsUnderAttack
+		    		|| self.supplyUsed() >= 380 || aBaseIsUnderAttack
 	//	    		|| (center.getApproxDistance(squad.getObjective()) < 10*32 && squad.getUnitCount(UnitType.Protoss_Zealot) == 0)
 		    		|| (enemyRace == Race.Terran && !enemyBuildingTab.containsKey(UnitType.Terran_Siege_Tank_Siege_Mode)
 		    		&& !enemyArmyTab.containsKey(UnitType.Terran_Medic) && game.enemy().getUpgradeLevel(UpgradeType.Ion_Thrusters) == 0)) {
@@ -2050,10 +2088,21 @@ public class GuiBot extends DefaultBWListener {
 		    				freeAgents.takeUnit(myUnit, itr);
 		    		}
 		    		
+		    		center = squad.findCenter();
+//		    		System.out.println(squad.getUnits().size());
+		    		//merge squads together
+		    		for(Squad otherSquad: army) {
+		    			if(otherSquad.getUnits().size() > 0 && !otherSquad.equals(squad) && center.getApproxDistance(otherSquad.findCenter()) < 4*32
+		    				&& otherSquad.getObjective().equals(squad.getObjective())) {
+		    				squad.takeAllUnits(otherSquad);
+		    			}
+		    		}
+		    		
+		    		//send commands
 		    		if(squad.isTogether() || squad.getCommand() == UnitState.ATTACKING) {
 			    		squad.attack(range);
 		    		} else {
-		    			squad.groupUp(center);
+		    			squad.groupUp();
 		    		}
 	
 		    	} else if(defenseChoke != null ) {

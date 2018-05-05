@@ -41,6 +41,8 @@ public class MyUnit extends PositionedObject {
 		techPosition = null;
 		//stupid goon cancel frames
 		cancelFrames = 0;
+		gotCommand = false;
+		squad = null;
 	}
 
 	@Override
@@ -126,7 +128,10 @@ public class MyUnit extends PositionedObject {
 	}
 	public boolean[] move(Position pos) throws Exception {
 		target = null;
-		u.move(pos);
+		if(!gotCommand)
+			u.move(pos);
+		
+		gotCommand = true;
 		return null;
 	}
 	public void moveAwayFrom(Position pos) throws Exception {
@@ -243,6 +248,8 @@ public class MyUnit extends PositionedObject {
 	}
 	//default check to see if unit's attack will not be interrupted with another command. Good for zealots, DTs, and Archons
 	public boolean isFree() throws Exception {
+		if(gotCommand)
+			return false;
 		if(u.isLoaded())
 			return false;	
 		if(u.getGroundWeaponCooldown() < u.getType().groundWeapon().damageCooldown()-cancelFrames-1 && u.getGroundWeaponCooldown() > 0)
@@ -261,6 +268,8 @@ public class MyUnit extends PositionedObject {
 	
 	//default check to see if unit's attack unit command will not be interrupted with another command. Good for zealots, DTs, and Archons
 	public boolean isFree(Unit hisUnit) {
+		if(gotCommand)
+			return false;
 		if(u.isLoaded())
 			return false;
 		if(u.getGroundWeaponCooldown() < u.getType().groundWeapon().damageCooldown()-cancelFrames-1 && u.getGroundWeaponCooldown() > 0)
@@ -301,5 +310,14 @@ public class MyUnit extends PositionedObject {
 	}
 	public Squad getSquad() {
 		return squad;
+	}
+	public boolean hasCommand() {
+		return gotCommand;
+	}
+	public void setSquad(Squad squad) {
+		this.squad = squad;
+	}
+	public void setCommandGiven(boolean commanded) {
+		gotCommand = commanded;
 	}
 }
