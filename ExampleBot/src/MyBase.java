@@ -4,9 +4,9 @@ import java.util.Iterator;
 
 import bwapi.Game;
 import bwapi.Unit;
-import bwapi.UnitCommandType;
 import bwapi.UnitType;
 import bwta.BWTA;
+import bwta.BaseLocation;
 import bwta.Region;
 
 public class MyBase {
@@ -16,7 +16,7 @@ public class MyBase {
 	private Squad workers;
 	private Game game;
 	private boolean isAMain;
-	private Region region;
+	private BaseLocation base;
 	private boolean isUnderAttack;
 	
 	public MyBase(Game game, Unit unit) {
@@ -25,7 +25,7 @@ public class MyBase {
 		workers = new Squad(game);
 		resources = new HashMap<Unit, Integer>();
 		buildings = new ArrayList<Unit>();
-		this.region = BWTA.getRegion(unit.getPosition());
+		base = BWTA.getNearestBaseLocation(unit.getPosition());
 		isUnderAttack = false;
 		workers.resumeMining();
 	}
@@ -94,6 +94,10 @@ public class MyBase {
 				count++;
 		}
 		return count;
+	}
+	
+	public BaseLocation getBaseLocation() {
+		return base;
 	}
 	
 	public boolean isUnderAttack() {

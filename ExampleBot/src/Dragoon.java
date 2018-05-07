@@ -1,6 +1,7 @@
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 
+import bwapi.Color;
 import bwapi.Game;
 import bwapi.Position;
 import bwapi.Unit;
@@ -14,6 +15,7 @@ public class Dragoon extends MyUnit {
 		super(u, game);
 		// TODO Auto-generated constructor stub
 		cancelFrames = 5;
+		scale = 2*32;
 	}
 	
 	public void attack(Position pos, boolean attackBuildings) throws Exception {
@@ -28,13 +30,13 @@ public class Dragoon extends MyUnit {
 							&& !u.getLastCommand().getTarget().equals(target))) {
 							
 							u.attack(target);
-//							game.drawTextMap(u.getPosition(),"1");
+							gotCommand = true;
 						} else {
 //							game.drawTextMap(u.getPosition(),"charging");
 						}
 					} else {
-						u.move(target.getPosition());
-//						game.drawTextMap(u.getPosition(),"2");
+						move(target.getPosition());
+						gotCommand = true;
 					}
 				} else {
 					int myRange = game.self().weaponMaxRange(u.getType().groundWeapon());
@@ -43,19 +45,19 @@ public class Dragoon extends MyUnit {
 						hisSpeed *= 1.5;
 					int hisRange = game.enemy().weaponMaxRange(target.getType().groundWeapon());
 					if(!u.isInWeaponRange(target)) {
-						u.move(target.getPosition());
-//						game.drawTextMap(u.getPosition(),"3");
+						move(target.getPosition());
+						gotCommand = true;
+//						game.drawTextMap(u.getPosition(), ""+u.getGroundWeaponCooldown());
 					} else if(target.getType().canMove()) {
 //						&&	Math.max(myRange - hisRange, u.getDistance(target)) + 8*(u.getType().topSpeed() - hisSpeed) > 0 ) {
 						//kiting behavior
 						moveAwayFrom(target.getPosition());
-//						game.drawTextMap(u.getPosition(),"4");
+//						game.drawTextMap(u.getPosition(), ""+u.getGroundWeaponCooldown());
 					}
 				}
 					
 //				game.drawTextMap(u.getPosition(),""+u.getLastCommand().getUnitCommandType());
 			} else {
-//				game.drawTextMap(u.getPosition(), "charging");
 			}
 		} else if(isFree()) {
 //			if((u.getLastCommand().getUnitCommandType() != UnitCommandType.Attack_Move
@@ -64,15 +66,16 @@ public class Dragoon extends MyUnit {
 //				
 //				u.attack(pos);
 //			if(u.getGroundWeaponCooldown() == 0) {
-			if(!(u.getLastCommand().getUnitCommandType() == UnitCommandType.Attack_Move
-				&& !u.getLastCommand().getTargetPosition().equals(pos)))
-		
-				u.attack(pos);
+//			if(!(u.getLastCommand().getUnitCommandType() == UnitCommandType.Attack_Move
+//				&& !u.getLastCommand().getTargetPosition().equals(pos))) {
+//		
+//				u.attack(pos);
+//			}
 //			} else
-//				u.move(pos);
-//			game.drawTextMap(u.getPosition(),""+u.getLastCommand().getUnitCommandType());
+			move(pos);
+			gotCommand = true;
 		} else {
-//			game.drawTextMap(u.getPosition(), "busy");
+			game.drawTextMap(u.getPosition(), "busy atk");
 		}
 	}
 

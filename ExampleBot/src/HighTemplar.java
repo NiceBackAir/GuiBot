@@ -19,23 +19,21 @@ public class HighTemplar extends MyUnit {
 	}
 
 	public void attack(Position pos, boolean attackBuildings) throws Exception {
-//		if(u.canUseTech(TechType.Archon_Warp))
-//			game.sendText("merge");
-		techPosition = getTargetPosition();
-//		if(u.isStuck())
-//			game.sendText("stuck");	
-		if(u.getEnergy() >= 75 && techPosition != null && u.getSpellCooldown() == 0) {// && isFree()) {
-//			if(u.canUseTech(TechType.Psionic_Storm, techPosition))
+		if(!gotCommand) {
+			techPosition = getTargetPosition();
+			if(u.getEnergy() >= 75 && techPosition != null && u.getSpellCooldown() == 0) {
 				u.useTech(TechType.Psionic_Storm, techPosition);
-//			 else
-//				u.move(techPosition);
-//			game.sendText("storm");
-//			game.drawTextMap(u.getPosition(),""+u.getSpellCooldown());
-		} else {
-			if(u.getPosition().getApproxDistance(pos) < u.getType().sightRange()) {
-				moveAwayFrom(pos);
+				gotCommand = true;
+
+	//			game.sendText("storm");
+	//			game.drawTextMap(u.getPosition(),""+u.getSpellCooldown());
 			} else {
-				u.move(pos);
+				if(u.getPosition().getApproxDistance(pos) < u.getType().sightRange()) {
+					moveAwayFrom(pos);
+				} else {
+					move(pos);
+					gotCommand = true;
+				}
 			}
 		}
 	}

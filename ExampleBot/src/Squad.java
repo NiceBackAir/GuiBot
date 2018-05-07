@@ -66,7 +66,6 @@ public class Squad {
 			//merge excess archons
 			if(GuiBot.enemyRace != Race.Terran && game.self().completedUnitCount(UnitType.Protoss_High_Templar) > 6) {
 				for(MyUnit u: units) {
-					u = itr.next();
 					if(!u.gotCommand && u.getUnit().getType() == UnitType.Protoss_High_Templar) {
 						mergeArchon(u);
 					}
@@ -75,7 +74,7 @@ public class Squad {
 			
 			if(myUnit.getUnit().exists()) {
 				myUnit.blockChoke(choke);
-				game.drawCircleMap(myUnit.getPosition(), 16, Color.Red);
+//				game.drawCircleMap(myUnit.getPosition(), 16, Color.Red);
 			} else {
 				itr.remove();
 			}
@@ -92,7 +91,7 @@ public class Squad {
 		center = findCenter();
 //		System.out.println(objective + " " + center);
 		boolean attackBuildings = true;
-		for(Unit hisUnit: game.getUnitsInRadius(objective, range)) {
+		for(Unit hisUnit: game.getUnitsInRadius(center, 8*32)) {
 			if(hisUnit.getPlayer() == game.enemy() && hisUnit.isDetected() && !hisUnit.isInvincible()
 				&& (!hisUnit.getType().isBuilding() || hisUnit.getType().canAttack()
 				|| hisUnit.getType() == UnitType.Terran_Bunker) && hisUnit.getType() != UnitType.Resource_Vespene_Geyser					
@@ -113,12 +112,15 @@ public class Squad {
 		}
 		
 		Iterator<MyUnit> itr = units.iterator();
-		if(isStaged(objective, range)) {
+		if(isStaged(objective, range) || units.size() == 1 || attackBuildings) {
 			while(itr.hasNext()) {
 				myUnit = itr.next();
 				if(myUnit.getUnit().exists()) {
 					myUnit.attack(objective, attackBuildings);
-					game.drawCircleMap(myUnit.getPosition(), 16, Color.Green);
+//					if(attackBuildings)
+//						game.drawCircleMap(myUnit.getPosition(), 16, Color.Orange);
+//					else
+//						game.drawCircleMap(myUnit.getPosition(), 16, Color.Green);
 				} else {
 					itr.remove();
 				}
@@ -130,15 +132,15 @@ public class Squad {
 				groupUp();
 			}			
 		}
-		game.drawCircleMap(objective,range, Color.Red);
-		game.drawLineMap(objective, center, Color.Green);
+//		game.drawCircleMap(objective,range, Color.Red);
+//		game.drawLineMap(objective, center, Color.Green);
 	}
 	
 	public void mergeArchon(MyUnit myUnit) {
 		MyUnit closestTemplar = null;
 		for(MyUnit otherUnit: units) {
-			if(otherUnit.getUnit().getType() == UnitType.Protoss_High_Templar && !otherUnit.equals(myUnit)
-				&& otherUnit.getUnit().getEnergy() < 75 || game.self().completedUnitCount(UnitType.Protoss_High_Templar) > 6) {
+			if(otherUnit.getUnit().getType() == UnitType.Protoss_High_Templar && !otherUnit.equals(myUnit) && !otherUnit.gotCommand
+				&& (otherUnit.getUnit().getEnergy() < 75 || game.self().completedUnitCount(UnitType.Protoss_High_Templar) > 6)) {
 				
 				if(closestTemplar == null || myUnit.getPosition().getApproxDistance(otherUnit.getPosition())
 					< myUnit.getPosition().getApproxDistance(closestTemplar.getPosition())) {
@@ -151,6 +153,7 @@ public class Squad {
 			myUnit.getUnit().useTech(TechType.Archon_Warp, closestTemplar.getUnit());
 			myUnit.setCommandGiven(true);
 			closestTemplar.getUnit().useTech(TechType.Archon_Warp, myUnit.getUnit());
+//			game.drawLineMap(myUnit.getPosition(), closestTemplar.getPosition(), Color.Cyan);
 			closestTemplar.setCommandGiven(true);
 		}
 	}
@@ -171,8 +174,8 @@ public class Squad {
 					myUnit.surround(pos, center, range);
 				else
 					myUnit.moveAwayFrom(pos);
-				
-				game.drawCircleMap(myUnit.getPosition(), 16, Color.Blue);
+//				game.drawLineMap(myUnit.getPosition(), pos, Color.Teal);
+//				game.drawCircleMap(myUnit.getPosition(), 16, Color.Blue);
 			} else {
 				itr.remove();
 			}
@@ -203,7 +206,7 @@ public class Squad {
 				} else {
 					myUnit.move(objective);
 				}
-				game.drawCircleMap(myUnit.getPosition(),16, Color.White);
+//				game.drawCircleMap(myUnit.getPosition(),16, Color.White);
 			} else {
 				itr.remove();
 			}
@@ -239,8 +242,8 @@ public class Squad {
 		centerY /= units;
 
 		center = new Position(centerX, centerY);
-		game.drawCircleMap(new Position(centerX, centerY), 3, Color.Green);
-		game.drawTextMap(new Position(centerX, centerY), ""+units);
+//		game.drawCircleMap(new Position(centerX, centerY), 3, Color.Green);
+//		game.drawTextMap(new Position(centerX, centerY), ""+units);
 		
 		return center;		
 	}

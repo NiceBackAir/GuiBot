@@ -89,8 +89,11 @@ public class MyUnit extends PositionedObject {
 						&& !u.getLastCommand().getTarget().equals(target) && u.isInWeaponRange(target)) && u.getGroundWeaponCooldown() == 0)
 					
 					u.attack(target);
-				} else
-					u.move(target.getPosition());
+					gotCommand = true;
+				} else {
+					move(target.getPosition());
+					gotCommand = true;
+				}
 //				game.drawTextMasp(u.getPosition(),""+u.getLastCommand().getUnitCommandType());
 			} else {
 //				game.drawTextMap(u.getPosition(), "busy");
@@ -102,15 +105,17 @@ public class MyUnit extends PositionedObject {
 //				
 //				u.attack(pos);
 //			if(u.getGroundWeaponCooldown() == 0) {
-				if(!(u.getLastCommand().getUnitCommandType() == UnitCommandType.Attack_Move
-					&& !u.getLastCommand().getTargetPosition().equals(pos)))
+//				if(!(u.getLastCommand().getUnitCommandType() == UnitCommandType.Attack_Move
+//					&& !u.getLastCommand().getTargetPosition().equals(pos)))
 			
-				u.attack(pos);
+//				u.attack(pos);
+				
 //			} else
-//				u.move(pos);
+				move(pos);
+				gotCommand = true;
 //			game.drawTextMap(u.getPosition(),""+u.getLastCommand().getUnitCommandType());
 		} else {
-//			game.drawTextMap(u.getPosition(), "busy");
+//			game.drawTextMap(u.getPosition(), "busy atk");
 		}
 	}
 //	public boolean[] attack(Unit hisUnit) {
@@ -123,30 +128,45 @@ public class MyUnit extends PositionedObject {
 		target = getTarget(false);
 		if(isFree() && !u.isHoldingPosition()) {
 			u.holdPosition();
+			gotCommand = true;
 		}
 		return null;
 	}
-	public boolean[] move(Position pos) throws Exception {
+	public void move(Position pos) throws Exception {
 		target = null;
-		if(!gotCommand)
-			u.move(pos);
-		
+		if(!gotCommand) {
+//			if(u.getLastCommand().getUnitCommandType() == UnitCommandType.Move && (!u.isMoving() || u.isIdle())) {
+//				//fix the weird stuck unit glitch
+//				u.stop();
+//				game.sendText("why");
+//			} else
+			
+			if(u.isAttackFrame() && u.getLastCommand().getUnitCommandType() != UnitCommandType.Stop)
+				u.stop();
+			else if(u.getLastCommand().getUnitCommandType() != UnitCommandType.Move || u.getLastCommand().getTargetPosition() != pos)
+				u.move(pos);
+			game.drawLineMap(u.getPosition(), pos, Color.Teal);
+		} 
 		gotCommand = true;
-		return null;
 	}
 	public void moveAwayFrom(Position pos) throws Exception {
 		double d = u.getPosition().getApproxDistance(pos);
 		double[] moveVector = {(u.getX()-pos.getX())*scale/d, (u.getY()-pos.getY())*scale/d};
 		moveVector = terrainCorrection(moveVector);
+		moveVector = adjustForWalls(moveVector, u);
  		
- 		u.move(new Position(u.getX()+(int)moveVector[0], u.getY()+(int)moveVector[1]));
-// 		game.drawLineMap(u.getPosition(), new Position(u.getX() + (int)moveVector[0], u.getY() + (int)moveVector[1]), Color.White);
+		Position destination = new Position(u.getX()+(int)moveVector[0], u.getY()+(int)moveVector[1]);
+
+		move(destination);
+
+ 		gotCommand = true;
+// 		game.drawLineMap(u.getPosition(), destination, Color.White);
 	}
 	
 	/** Surround enemies like water, literally
 	 * 
 	 */
-	public void surround(Position pos, Position origin, int R) {
+	public void surround(Position pos, Position origin, int R) throws Exception {
 		double d = pos.getApproxDistance(origin);
 		double[] flowVector = {(pos.getX()-origin.getX())/d, (pos.getY()-origin.getY())/d};
 		double[] moveVector = new double[2];
@@ -166,9 +186,13 @@ public class MyUnit extends PositionedObject {
 				
 		moveVector = GuiBot.setMagnitude(moveVector, scale);
 		moveVector = terrainCorrection(moveVector);
+		moveVector = adjustForWalls(moveVector, u);
 // 		game.drawLineMap(u.getPosition(), new Position(u.getX() + (int)moveVector[0], u.getY() + (int)moveVector[1]), Color.Blue);
 		
- 		u.move(new Position(u.getX()+(int)moveVector[0], u.getY()+(int)moveVector[1]));
+ 		Position destination = new Position(u.getX()+(int)moveVector[0], u.getY()+(int)moveVector[1]);
+			
+ 		move(destination);
+ 		gotCommand = true;
 	}
 	public double[] terrainCorrection(double[] moveVector) {
 		double d;
@@ -199,16 +223,89 @@ public class MyUnit extends PositionedObject {
  		return moveVector;
 	}
 	
+    /** Makes hovering units move at full speed even if they reach the end of the map.
+     * 
+     * @param v			vector to modify
+     * @param myUnit	unit who's moving
+     * @return			vector pointing somewhere in bounds of the map
+     */
+    public double[] adjustForWalls(double[] v, Unit myUnit) {
+    	double r = Math.sqrt(v[0]*v[0] + v[1]*v[1]);
+    	double margin = Math.max(myUnit.getType().width(), myUnit.getType().height())/2.0;
+    	double dx = v[0];
+    	double dy = v[1];
+    	double dir;
+    	double xOutside = 0;
+    	double yOutside = 0;
+    	
+    	//fix literal corner cases
+    	if(myUnit.getX() + dx < margin) {
+    		xOutside = Math.abs(myUnit.getX() + dx - margin);
+    	} else if(myUnit.getX() + dx > game.mapWidth()*32 - margin) {
+    		xOutside = Math.abs(myUnit.getX() - (game.mapWidth()*32 - margin));
+    	} else if(myUnit.getY() + dy < margin) {
+    		yOutside = Math.abs(myUnit.getY() + dy - margin);
+    	} else if(myUnit.getY() + dy > game.mapHeight()*32 - margin) {
+    		yOutside = Math.abs(myUnit.getY() + dy - (game.mapHeight()*32 - margin));
+    	} else {
+    	}
+    	if(xOutside > 0 && yOutside > 0) {
+	    	if(xOutside > yOutside) {
+	    		dy *= -1;
+	    	} else {
+	    		dx *= -1;
+	    	}
+    	}
+    	
+    	//redirect move vector to stay in map
+    	if(myUnit.getX() + dx < margin) {
+    		dir = Math.signum(dy);
+    		if(dir == 0)
+    			dir = Math.signum(myUnit.getX()-game.mapWidth()*32);
+    		dx = margin-myUnit.getX();
+    		dy = dir*Math.sqrt(r*r-dx*dx);
+    	} else if(myUnit.getX() + dx > game.mapWidth()*32 - margin) {
+    		dir = Math.signum(dy);
+    		if(dir == 0)
+    			dir = Math.signum(myUnit.getX()-game.mapWidth()*32);
+    		dx = game.mapWidth()*32 - margin - myUnit.getX();
+    		dy = dir*Math.sqrt(r*r-dx*dx);
+    	} else if(myUnit.getY() + dy < margin) {
+    		dir = Math.signum(dx);
+    		if(dir == 0)
+    			dir = Math.signum(myUnit.getY()-game.mapHeight()*32);
+    		dy = margin - myUnit.getY();
+    		dx = dir*Math.sqrt(r*r-dy*dy);
+    	} else if(myUnit.getY() + dy > game.mapHeight()*32 - margin) {
+    		dir = Math.signum(dx);
+    		if(dir == 0)
+    			dir = Math.signum(myUnit.getY()-game.mapHeight()*32);
+    		dy = game.mapHeight()*32 - margin - myUnit.getY();
+    		dx = dir*Math.sqrt(r*r-dy*dy);
+    	} else {
+    	}
+    	return new double[] {dx, dy};
+    }
+	
 	public void blockChoke(Chokepoint choke) throws Exception {
 		target = getTarget(false);
 //		if(u.isStuck()) 
 //			game.sendText("stuck");	
 		if(choke != null && isFree()) {
-			if(u.getType().groundWeapon() != WeaponType.None && game.self().weaponMaxRange(u.getType().groundWeapon()) <= 3*32
+			if(u.getType().groundWeapon() != WeaponType.None
 				&& GuiBot.intersects(u.getType(), u.getPosition(), choke.getSides().first, choke.getSides().second)) {
-				//melee units can wall
-				if(!u.isHoldingPosition())
-					u.holdPosition();
+				if(game.self().weaponMaxRange(u.getType().groundWeapon()) <= 3*32) {
+					//melee units can wall
+					if(!u.isHoldingPosition())
+						u.holdPosition();
+				} else {
+					if(target == null) {
+						if(u.getLastCommand().getUnitCommandType() != UnitCommandType.Stop)
+							u.stop();
+					} else {
+							attack(target.getPosition(), false);
+					}
+				}
 			} else if(choke.getCenter().getApproxDistance(u.getPosition()) < choke.getWidth()/1.5) {
 				if(!u.isHoldingPosition()) {
 					if(BWTA.getRegion(u.getPosition()).equals(choke.getRegions().first)) {	
@@ -217,9 +314,14 @@ public class MyUnit extends PositionedObject {
 						attack(choke.getRegions().first.getCenter(), false);
 					}
 				}
-			} else
+			} else if(target != null) {
+				attack(target.getPosition(), false);
+			} else {
 				attack(choke.getCenter(), false);
+			}
+		} else {
 		}
+		gotCommand = true;
 	}
 		
 	public Unit getTarget(boolean attackBuildings) throws Exception {
@@ -252,17 +354,18 @@ public class MyUnit extends PositionedObject {
 			return false;
 		if(u.isLoaded())
 			return false;	
-		if(u.getGroundWeaponCooldown() < u.getType().groundWeapon().damageCooldown()-cancelFrames-1 && u.getGroundWeaponCooldown() > 0)
+		if(!u.isAttackFrame() && u.getGroundWeaponCooldown() > 0)
 			return true;
 		
 		if(u.getLastCommand().getUnitCommandType() == UnitCommandType.Attack_Move				
 			|| u.getLastCommand().getUnitCommandType() == UnitCommandType.Hold_Position
 			|| u.getLastCommand().getUnitCommandType() == UnitCommandType.Patrol) {
 			
-			if(target != null)
+			if(target != null && target.exists() && u.isInWeaponRange(target)) {
 				return false;
+			}
+				
 		}
-			
 		return true;
 	}
 	
@@ -272,7 +375,7 @@ public class MyUnit extends PositionedObject {
 			return false;
 		if(u.isLoaded())
 			return false;
-		if(u.getGroundWeaponCooldown() < u.getType().groundWeapon().damageCooldown()-cancelFrames-1 && u.getGroundWeaponCooldown() > 0)
+		if(!u.isAttackFrame() && u.getGroundWeaponCooldown() > 0)
 			return true;
 		if(u.getLastCommand().getTarget() != null && u.getLastCommand().getTarget().equals(hisUnit)
 			&& hisUnit.isDetected() && hisUnit.getType() != UnitType.Resource_Vespene_Geyser 
