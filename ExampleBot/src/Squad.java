@@ -90,15 +90,17 @@ public class Squad {
 		radius = range;
 		center = findCenter();
 //		System.out.println(objective + " " + center);
-		boolean attackBuildings = true;
+		boolean attackBuildings = false;
 		for(Unit hisUnit: game.getUnitsInRadius(center, 8*32)) {
 			if(hisUnit.getPlayer() == game.enemy() && hisUnit.isDetected() && !hisUnit.isInvincible()
-				&& (!hisUnit.getType().isBuilding() || hisUnit.getType().canAttack()
-				|| hisUnit.getType() == UnitType.Terran_Bunker) && hisUnit.getType() != UnitType.Resource_Vespene_Geyser					
+				&& hisUnit.getType() != UnitType.Resource_Vespene_Geyser					
 				&& hisUnit.getType() != UnitType.Zerg_Egg && hisUnit.getType() != UnitType.Zerg_Larva ) {
 				
-				attackBuildings = false;
-				break;
+				attackBuildings = true;
+				if (!hisUnit.getType().isBuilding() || hisUnit.getType().canAttack() || hisUnit.getType() == UnitType.Terran_Bunker) {
+					attackBuildings = false;
+					break;
+				}
 			}				
 		}
 
@@ -112,7 +114,7 @@ public class Squad {
 		}
 		
 		Iterator<MyUnit> itr = units.iterator();
-		if(isStaged(objective, range) || units.size() == 1 || attackBuildings) {
+		if(isStaged(objective, range) || units.size() == 1 || (attackBuildings && objective.getApproxDistance(center) < 11*32)) {
 			while(itr.hasNext()) {
 				myUnit = itr.next();
 				if(myUnit.getUnit().exists()) {
@@ -126,7 +128,7 @@ public class Squad {
 				}
 			}
 		} else {
-			if(isTogether() || objective.getApproxDistance(center) < 15*32) {
+			if(isTogether() && objective.getApproxDistance(center) < 15*32) {
 				contain(objective, range);
 			} else {
 				groupUp();
@@ -201,7 +203,8 @@ public class Squad {
 			myUnit = itr.next();
 			if(myUnit.getUnit().exists()) {
 				if(myUnit.getPosition().getApproxDistance(center) >= 10*32-16
-					&& GuiBot.walkMap[center.toTilePosition().getX()][center.toTilePosition().getY()] <= 0) {
+					&& myUnit.getUnit().hasPath(center)) {
+//					&& GuiBot.walkMap[center.toTilePosition().getX()][center.toTilePosition().getY()] <= 0) {
 					myUnit.move(center);
 				} else {
 					myUnit.move(objective);
@@ -233,7 +236,6 @@ public class Squad {
 			} else {
 				unitTab.put(type, 1);
 			}
-//			game.drawTextMap(myUnit.getPosition(), ""+myUnit.getSquad());
 		}
 		if(units == 0) 
 			return null;
@@ -242,8 +244,8 @@ public class Squad {
 		centerY /= units;
 
 		center = new Position(centerX, centerY);
-//		game.drawCircleMap(new Position(centerX, centerY), 3, Color.Green);
-//		game.drawTextMap(new Position(centerX, centerY), ""+units);
+		game.drawCircleMap(new Position(centerX, centerY), 3, Color.Green);
+		game.drawTextMap(new Position(centerX, centerY), ""+units);
 		
 		return center;		
 	}

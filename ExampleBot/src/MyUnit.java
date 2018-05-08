@@ -86,13 +86,13 @@ public class MyUnit extends PositionedObject {
 			if(isFree(target)) {
 				if(u.getGroundWeaponCooldown() == 0) {
 					if(!(u.getLastCommand().getUnitCommandType() == UnitCommandType.Attack_Unit
-						&& !u.getLastCommand().getTarget().equals(target) && u.isInWeaponRange(target)) && u.getGroundWeaponCooldown() == 0)
+						&& !u.getLastCommand().getTarget().equals(target)) && u.isInWeaponRange(target))
 					
-					u.attack(target);
-					gotCommand = true;
-				} else {
-					move(target.getPosition());
-					gotCommand = true;
+						u.attack(target);
+						gotCommand = true;
+//				} else {
+//					move(target.getPosition());
+//					gotCommand = true;
 				}
 //				game.drawTextMasp(u.getPosition(),""+u.getLastCommand().getUnitCommandType());
 			} else {
@@ -145,7 +145,7 @@ public class MyUnit extends PositionedObject {
 				u.stop();
 			else if(u.getLastCommand().getUnitCommandType() != UnitCommandType.Move || u.getLastCommand().getTargetPosition() != pos)
 				u.move(pos);
-			game.drawLineMap(u.getPosition(), pos, Color.Teal);
+//			game.drawLineMap(u.getPosition(), pos, Color.Teal);
 		} 
 		gotCommand = true;
 	}

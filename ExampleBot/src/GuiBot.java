@@ -332,7 +332,7 @@ public class GuiBot extends DefaultBWListener {
         BWTA.analyze();
         System.out.println("Map data ready");
         
-        game.setCommandOptimizationLevel(1);
+        game.setCommandOptimizationLevel(3);
         
         //race needs its own variable to let it change away from random
         enemyRace = game.enemy().getRace();
@@ -415,18 +415,18 @@ public class GuiBot extends DefaultBWListener {
         	}
         }
   	   	
-        for(Region r: BWTA.getRegions()) {
-        	if(r.getChokepoints().contains(naturalChoke) && !r.getBaseLocations().contains(natural)) {
-                for(Chokepoint choke: r.getChokepoints()) {
-                	if(choke.getCenter().getApproxDistance(BWTA.getStartLocation(self).getPosition()) < 30*32 && choke.getWidth() > 3*32
-                		&& (lateGameChoke == null || 
-                		choke.getCenter().getApproxDistance(BWTA.getStartLocation(self).getPosition())
-                		> lateGameChoke.getCenter().getApproxDistance(BWTA.getStartLocation(self).getPosition()))) {
-                		lateGameChoke = choke;
-                	}
-                }
-        	}
-        }
+//        for(Region r: BWTA.getRegions()) {
+//        	if(r.getChokepoints().contains(naturalChoke) && !r.getBaseLocations().contains(natural)) {
+//                for(Chokepoint choke: r.getChokepoints()) {
+//                	if(choke.getCenter().getApproxDistance(BWTA.getStartLocation(self).getPosition()) < 30*32 && choke.getWidth() > 3*32
+//                		&& (lateGameChoke == null || 
+//                		choke.getCenter().getApproxDistance(BWTA.getStartLocation(self).getPosition())
+//                		> lateGameChoke.getCenter().getApproxDistance(BWTA.getStartLocation(self).getPosition()))) {
+//                		lateGameChoke = choke;
+//                	}
+//                }
+//        	}
+//        }
         
         //player control enable
         game.enableFlag(1);
@@ -685,7 +685,7 @@ public class GuiBot extends DefaultBWListener {
         		|| (self.allUnitCount(UnitType.Protoss_Nexus) == 2 && nextItem == UnitType.Protoss_Nexus))) {
         			
     			defenseChoke = lateGameChoke;    			
-    		} else if(naturalChoke != null && (self.allUnitCount(UnitType.Protoss_Nexus) == 2
+    		} else if(naturalChoke != null && (self.allUnitCount(UnitType.Protoss_Nexus) >= 2
             	|| (self.allUnitCount(UnitType.Protoss_Nexus) == 1 && nextItem == UnitType.Protoss_Nexus))) {
     			defenseChoke = naturalChoke;
     		} else if(mainChoke != null) {
@@ -846,6 +846,13 @@ public class GuiBot extends DefaultBWListener {
         }
         for (Unit neutralUnit : game.neutral().getUnits()) {
     		
+        	if(enemyBuildings.containsKey(neutralUnit.getID())) {        		
+        		enemyBuildings.get(neutralUnit.getID()).update();
+        		//in case someone does extractor trick or refinery is killed
+        		if(neutralUnit.isVisible())
+        			enemyBuildings.remove(neutralUnit.getID());
+        	}
+        	
         	int saturation = 0;
             if (neutralUnit.getType().isMineralField()) {    
             	for (Unit u: game.getUnitsInRadius(neutralUnit.getPosition(), 6*PIXELS_PER_TILE)) {
@@ -1298,16 +1305,16 @@ public class GuiBot extends DefaultBWListener {
     		&& self.completedUnitCount(UnitType.Protoss_Cybernetics_Core) > 0) {
 		
     		nextBuilding = UnitType.Protoss_Stargate;    	
-    	} else if(self.allUnitCount(UnitType.Protoss_Nexus) <2) {
-    		nextBuilding = UnitType.Protoss_Nexus;  
+    	} else if(self.allUnitCount(UnitType.Protoss_Gateway) <2) {
+    		nextBuilding = UnitType.Protoss_Gateway;  
     	} else if(self.allUnitCount(UnitType.Protoss_Robotics_Facility) == 0) {
         	if(self.allUnitCount(UnitType.Protoss_Cybernetics_Core) > 0) 
         		nextBuilding = UnitType.Protoss_Robotics_Facility; 	
     	} else if(self.allUnitCount(UnitType.Protoss_Robotics_Support_Bay) == 0) { 
     		if(self.allUnitCount(UnitType.Protoss_Robotics_Facility) > 0) 
     			nextBuilding = UnitType.Protoss_Robotics_Support_Bay; 		
-    	} else if(self.allUnitCount(UnitType.Protoss_Gateway) <2) {
-    		nextBuilding = UnitType.Protoss_Gateway;  
+    	} else if(self.allUnitCount(UnitType.Protoss_Nexus) <2) {
+    		nextBuilding = UnitType.Protoss_Nexus;  
     	} else if(self.allUnitCount(UnitType.Protoss_Observatory) == 0 
     		&& self.allUnitCount(UnitType.Protoss_Robotics_Facility) > 0) {
 		
@@ -1356,6 +1363,8 @@ public class GuiBot extends DefaultBWListener {
     	} else if(self.allUnitCount(UnitType.Protoss_Robotics_Facility) == 0) {
         	if(self.allUnitCount(UnitType.Protoss_Cybernetics_Core) > 0) 
         		nextBuilding = UnitType.Protoss_Robotics_Facility; 	
+    	} else if(self.allUnitCount(UnitType.Protoss_Gateway) < 2) {
+    		nextBuilding = UnitType.Protoss_Gateway; 
     	} else if(self.allUnitCount(UnitType.Protoss_Observatory) == 0) {
     		if(self.completedUnitCount(UnitType.Protoss_Robotics_Facility) > 0)    		
     			nextBuilding = UnitType.Protoss_Observatory;
@@ -1366,14 +1375,14 @@ public class GuiBot extends DefaultBWListener {
     		nextBuilding = UnitType.Protoss_Nexus; 
     	} else if(self.allUnitCount(UnitType.Protoss_Gateway) < 4) {
     		nextBuilding = UnitType.Protoss_Gateway;   
-    	} else if(self.allUnitCount(UnitType.Protoss_Forge) == 0) {
-    		nextBuilding = UnitType.Protoss_Forge; 
-    	} else if(self.allUnitCount(UnitType.Protoss_Nexus) < 3) {
-    		nextBuilding = UnitType.Protoss_Nexus;   	
     	} else if(self.allUnitCount(UnitType.Protoss_Citadel_of_Adun) == 0) {    		
     		nextBuilding = UnitType.Protoss_Citadel_of_Adun;    
 		} else if(self.allUnitCount(UnitType.Protoss_Templar_Archives) == 0) {	        		
 			nextBuilding = UnitType.Protoss_Templar_Archives;    	
+    	} else if(self.allUnitCount(UnitType.Protoss_Nexus) < 3) {
+    		nextBuilding = UnitType.Protoss_Nexus;   	
+    	} else if(self.allUnitCount(UnitType.Protoss_Forge) == 0) {
+    		nextBuilding = UnitType.Protoss_Forge; 
     	} else if(self.allUnitCount(UnitType.Protoss_Gateway) < Math.min(15, (patchCount*3)/8)) {
     		nextBuilding = UnitType.Protoss_Gateway;        	
     	} else {
@@ -2163,7 +2172,7 @@ public class GuiBot extends DefaultBWListener {
 		    		MyUnit myUnit;
 		    		while(itr.hasNext()) {
 		    			myUnit = itr.next();
-		    			if(myUnit.getPosition().getApproxDistance(center) >= 30*32 && squad.getUnitCount() > 1)
+		    			if(myUnit.getPosition().getApproxDistance(center) >= 25*32 && squad.getUnitCount() > 1)
 		    				freeAgents.takeUnit(myUnit, itr);
 		    		}
 		    		
@@ -2845,8 +2854,11 @@ public class GuiBot extends DefaultBWListener {
 	                }
 	            } 
 	    	} else if (nextItem == UnitType.Protoss_Nexus) {  		
+	    		boolean baseTaken;
+	    		double bestBasePriority = 999;
+	    		double basePriority = 999;
 	            for (BaseLocation b : BWTA.getBaseLocations()) {  
-	            	boolean baseTaken = false;
+	            	baseTaken = false;
 	            	TilePosition t = b.getTilePosition();
 	            	for(Unit u: game.getUnitsInRectangle(t.toPosition(), new Position((t.getX()+4)*32, (t.getY()+3)*32))) {
 	            		if(u.getType().isResourceDepot()) {
@@ -2861,9 +2873,22 @@ public class GuiBot extends DefaultBWListener {
 	            			baseTaken = true;
 	            		}
 	            	}
-	        		if (!b.isIsland()  && !baseTaken //&& !b.isMineralOnly()
-	        			&& (bestTile == null || mainChoke.getApproxDistance(t.toPosition()) < mainChoke.getApproxDistance(bestTile.toPosition()))) {
-	            		bestTile = t;
+	            	//metric of which base to take
+	            	if(enemyMain != null) 
+		            	basePriority = 1.0/Math.max(1, b.getPosition().getApproxDistance(self.getStartLocation().toPosition()))
+	            			- 1.0/Math.max(1, b.getPosition().getApproxDistance(enemyMain.toPosition()));
+	            		
+	        		if(!b.isIsland()  && !baseTaken) {//&& !b.isMineralOnly()
+	        			if(self.allUnitCount(UnitType.Protoss_Nexus) == 1 || enemyMain == null) {
+	        				//find natural base
+	        				bestTile = natural.getTilePosition();
+	        			} else {
+	        				//find bases after natural
+	        				if(bestTile == null || basePriority > bestBasePriority) {
+	        					bestBasePriority = basePriority;
+	        					bestTile = t;
+	        				}
+	        			}
 	            	}
 	            }   
 	    	} else {
