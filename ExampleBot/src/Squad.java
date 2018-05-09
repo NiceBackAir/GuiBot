@@ -10,6 +10,7 @@ import bwapi.TechType;
 import bwapi.Unit;
 import bwapi.UnitCommandType;
 import bwapi.UnitType;
+import bwapi.WeaponType;
 import bwta.BaseLocation;
 import bwta.Chokepoint;
 
@@ -20,7 +21,7 @@ public class Squad {
 	private int radius;
 	private BaseLocation base;
 	private Game game;
-	private boolean seesEnemies;
+	private boolean seesRangedEnemies;
 	private Position center;
 	private HashMap<UnitType, Integer> unitTab;
 	
@@ -59,7 +60,7 @@ public class Squad {
 		Iterator<MyUnit> itr = units.iterator();
 		MyUnit myUnit;
 		center = findCenter();
-
+		
 		while(itr.hasNext()) {
 			myUnit = itr.next();
 			
@@ -74,7 +75,7 @@ public class Squad {
 			
 			if(myUnit.getUnit().exists()) {
 				myUnit.blockChoke(choke);
-//				game.drawCircleMap(myUnit.getPosition(), 16, Color.Red);
+				game.drawCircleMap(myUnit.getPosition(), 16, Color.Red);
 			} else {
 				itr.remove();
 			}
@@ -119,10 +120,10 @@ public class Squad {
 				myUnit = itr.next();
 				if(myUnit.getUnit().exists()) {
 					myUnit.attack(objective, attackBuildings);
-//					if(attackBuildings)
-//						game.drawCircleMap(myUnit.getPosition(), 16, Color.Orange);
-//					else
-//						game.drawCircleMap(myUnit.getPosition(), 16, Color.Green);
+					if(attackBuildings)
+						game.drawCircleMap(myUnit.getPosition(), 16, Color.Orange);
+					else
+						game.drawCircleMap(myUnit.getPosition(), 16, Color.Green);
 				} else {
 					itr.remove();
 				}
@@ -134,14 +135,16 @@ public class Squad {
 				groupUp();
 			}			
 		}
-//		game.drawCircleMap(objective,range, Color.Red);
-//		game.drawLineMap(objective, center, Color.Green);
+		game.drawCircleMap(objective,range, Color.Red);
+		game.drawLineMap(objective, center, Color.Green);
 	}
 	
 	public void mergeArchon(MyUnit myUnit) {
 		MyUnit closestTemplar = null;
 		for(MyUnit otherUnit: units) {
-			if(otherUnit.getUnit().getType() == UnitType.Protoss_High_Templar && !otherUnit.equals(myUnit) && !otherUnit.gotCommand
+			if(myUnit.getUnit().getLastCommand().getUnitCommandType() != UnitCommandType.Use_Tech_Unit
+				&& otherUnit.getUnit().getLastCommand().getUnitCommandType() != UnitCommandType.Use_Tech_Unit
+				&& otherUnit.getUnit().getType() == UnitType.Protoss_High_Templar && !otherUnit.equals(myUnit) && !otherUnit.gotCommand
 				&& (otherUnit.getUnit().getEnergy() < 75 || game.self().completedUnitCount(UnitType.Protoss_High_Templar) > 6)) {
 				
 				if(closestTemplar == null || myUnit.getPosition().getApproxDistance(otherUnit.getPosition())
@@ -155,7 +158,7 @@ public class Squad {
 			myUnit.getUnit().useTech(TechType.Archon_Warp, closestTemplar.getUnit());
 			myUnit.setCommandGiven(true);
 			closestTemplar.getUnit().useTech(TechType.Archon_Warp, myUnit.getUnit());
-//			game.drawLineMap(myUnit.getPosition(), closestTemplar.getPosition(), Color.Cyan);
+			game.drawLineMap(myUnit.getPosition(), closestTemplar.getPosition(), Color.Cyan);
 			closestTemplar.setCommandGiven(true);
 		}
 	}
@@ -176,8 +179,7 @@ public class Squad {
 					myUnit.surround(pos, center, range);
 				else
 					myUnit.moveAwayFrom(pos);
-//				game.drawLineMap(myUnit.getPosition(), pos, Color.Teal);
-//				game.drawCircleMap(myUnit.getPosition(), 16, Color.Blue);
+				game.drawCircleMap(myUnit.getPosition(), 16, Color.Blue);
 			} else {
 				itr.remove();
 			}
@@ -209,7 +211,7 @@ public class Squad {
 				} else {
 					myUnit.move(objective);
 				}
-//				game.drawCircleMap(myUnit.getPosition(),16, Color.White);
+				game.drawCircleMap(myUnit.getPosition(),16, Color.White);
 			} else {
 				itr.remove();
 			}
@@ -257,6 +259,9 @@ public class Squad {
 	}
 	public Position getObjective() {
 		return objective;
+	}
+	public boolean seesRangedEnemies() {
+		return seesRangedEnemies;
 	}
 	public void setObjective(Position pos) {
 		objective = pos;
@@ -309,5 +314,15 @@ public class Squad {
 	}
 	public int getUnitCount() {
 		return units.size();
+	}
+	public void setSeesRangedEnemies(boolean rangedEnemyExists) {
+		seesRangedEnemies = rangedEnemyExists;
+	}
+	public boolean canAttackAir() {
+		for(MyUnit u: units) {
+			if(u.getUnit().getType().airWeapon() != WeaponType.None)
+				return true;
+		}
+		return false;
 	}
 }

@@ -938,7 +938,7 @@ public class GuiBot extends DefaultBWListener {
 	        		airAttackPosition = hisUnit.getPosition();
 	        	}
 	        	if(hisUnit.getType() != UnitType.Zerg_Larva && hisUnit.getType() != UnitType.Zerg_Egg
-	        		&& hisUnit.isDetected() && hisUnit.getType() != UnitType.Resource_Vespene_Geyser
+	        		&& hisUnit.isDetected() && hisUnit.getType() != UnitType.Resource_Vespene_Geyser && !hisUnit.isFlying()
 		        	&& (!hisUnit.getType().isBuilding() || hisUnit.getType().canAttack() || hisUnit.getType() == UnitType.Terran_Bunker)
 		        	&& (attackPosition == null || hisUnit.getPosition().getApproxDistance(self.getStartLocation().toPosition()) 
 	        		< attackPosition.getApproxDistance(self.getStartLocation().toPosition()) && hisUnit.getType() != UnitType.Zerg_Overlord)) {
@@ -1323,11 +1323,13 @@ public class GuiBot extends DefaultBWListener {
     		nextBuilding = UnitType.Protoss_Forge;    		
     	} else if(self.allUnitCount(UnitType.Protoss_Gateway) <4) {
     		nextBuilding = UnitType.Protoss_Gateway;   
+    	} else if(self.allUnitCount(UnitType.Protoss_Nexus) < 3 && gasBases <2) {
+    		nextBuilding = UnitType.Protoss_Nexus;
     	} else if(self.allUnitCount(UnitType.Protoss_Citadel_of_Adun) == 0 
     		&& self.completedUnitCount(UnitType.Protoss_Cybernetics_Core) > 0) {
     		
     		nextBuilding = UnitType.Protoss_Citadel_of_Adun;    	
-    	} else if(self.allUnitCount(UnitType.Protoss_Nexus) <3) {
+    	} else if(gasBases < 3) {
     		nextBuilding = UnitType.Protoss_Nexus;    	
     	} else if(self.allUnitCount(UnitType.Protoss_Templar_Archives) == 0
     		&& self.allUnitCount(UnitType.Protoss_Citadel_of_Adun) > 0) {
@@ -1375,11 +1377,13 @@ public class GuiBot extends DefaultBWListener {
     		nextBuilding = UnitType.Protoss_Nexus; 
     	} else if(self.allUnitCount(UnitType.Protoss_Gateway) < 4) {
     		nextBuilding = UnitType.Protoss_Gateway;   
+    	} else if(self.allUnitCount(UnitType.Protoss_Nexus) < 3 && gasBases <2) {
+    		nextBuilding = UnitType.Protoss_Nexus;
     	} else if(self.allUnitCount(UnitType.Protoss_Citadel_of_Adun) == 0) {    		
     		nextBuilding = UnitType.Protoss_Citadel_of_Adun;    
 		} else if(self.allUnitCount(UnitType.Protoss_Templar_Archives) == 0) {	        		
 			nextBuilding = UnitType.Protoss_Templar_Archives;    	
-    	} else if(self.allUnitCount(UnitType.Protoss_Nexus) < 3) {
+    	} else if(gasBases < 3) {
     		nextBuilding = UnitType.Protoss_Nexus;   	
     	} else if(self.allUnitCount(UnitType.Protoss_Forge) == 0) {
     		nextBuilding = UnitType.Protoss_Forge; 
@@ -1422,13 +1426,15 @@ public class GuiBot extends DefaultBWListener {
     		nextBuilding = UnitType.Protoss_Gateway;  
     	} else if(self.allUnitCount(UnitType.Protoss_Nexus) <3) {
     		nextBuilding = UnitType.Protoss_Nexus;    		
+    	} else if(self.allUnitCount(UnitType.Protoss_Nexus) < 4 && gasBases <2) {
+    		nextBuilding = UnitType.Protoss_Nexus;
     	} else if(self.allUnitCount(UnitType.Protoss_Citadel_of_Adun) == 0 
     		&& self.completedUnitCount(UnitType.Protoss_Cybernetics_Core) > 0) {
     		
     		nextBuilding = UnitType.Protoss_Citadel_of_Adun;   
     	} else if(self.allUnitCount(UnitType.Protoss_Gateway) <7) {
     		nextBuilding = UnitType.Protoss_Gateway;   	
-    	} else if(self.allUnitCount(UnitType.Protoss_Nexus) <4) {
+    	} else if(gasBases < 4) {
     		nextBuilding = UnitType.Protoss_Nexus;  
     	} else if(self.allUnitCount(UnitType.Protoss_Gateway) <10) {
     		nextBuilding = UnitType.Protoss_Gateway;   	
@@ -2035,12 +2041,18 @@ public class GuiBot extends DefaultBWListener {
     	Position center = null;
     	HisUnit hisTurret = null;
     	boolean aBaseIsUnderAttack = false;
+    	boolean canAttackAir = false;
     	
     	int range = 9*32;
     	if(enemyBuildingTab.containsKey(UnitType.Terran_Siege_Tank_Siege_Mode))
     		range = 14*32;
     	
     	for(Squad squad: army) {
+    		squad.setSeesRangedEnemies(false);
+    		closestTurret = null;
+    		closestSquishy = null;
+    		closestEnemy = null;
+    		canAttackAir = squad.canAttackAir();
     		if(squad.getUnits().size() > 0) {
     			center = squad.findCenter();
     			
@@ -2056,6 +2068,8 @@ public class GuiBot extends DefaultBWListener {
     						
     						closestTurret = hisTurret;
     					}
+    					
+    					squad.setSeesRangedEnemies(true);
     				}
     			}
     			//find closest enemies to squad
@@ -2064,17 +2078,23 @@ public class GuiBot extends DefaultBWListener {
 						&& !hisUnit.isInvincible() && hisUnit.getType() != UnitType.Zerg_Larva
 						&& hisUnit.getType() != UnitType.Zerg_Egg && hisUnit.getType() != UnitType.Resource_Vespene_Geyser) {
 						
-						if((!hisUnit.getType().isBuilding() || hisUnit.getType().canAttack() || hisUnit.getType() == UnitType.Terran_Bunker)
-							&& (closestSquishy == null || hisUnit.getPosition().getApproxDistance(center) 
-							< closestSquishy.getPosition().getApproxDistance(center))) {
-							
-							closestSquishy = hisUnit;
+						if(!hisTurret.getUnit().isFlying() || canAttackAir) {
+							if((!hisUnit.getType().isBuilding() || hisUnit.getType().canAttack() || hisUnit.getType() == UnitType.Terran_Bunker)
+								&& (closestSquishy == null || hisUnit.getPosition().getApproxDistance(center) 
+								< closestSquishy.getPosition().getApproxDistance(center))) {
+								
+								closestSquishy = hisUnit;
+							}
+							if(closestEnemy == null || hisUnit.getPosition().getApproxDistance(center) 
+								< closestEnemy.getPosition().getApproxDistance(center)) {
+								
+								closestEnemy = hisUnit;
+							}
 						}
-						if(closestEnemy == null || hisUnit.getPosition().getApproxDistance(center) 
-							< closestEnemy.getPosition().getApproxDistance(center)) {
-							
-							closestEnemy = hisUnit;
-						}
+						
+						//figure out if enemy has ranged units so you can stop holding choke
+						if(hisUnit.getType().groundWeapon() != WeaponType.None && hisUnit.getType().groundWeapon().maxRange() > 32)
+							squad.setSeesRangedEnemies(true);
 					}
 				}
 				
@@ -2096,8 +2116,13 @@ public class GuiBot extends DefaultBWListener {
 	//	    		squad.setObjective(closestSquishy.getPosition());
 	    		} else if(closestEnemy != null)
 		    		squad.setObjective(closestEnemy.getPosition());
-		    	else
-		    		squad.setObjective(attackPosition);
+		    	else {
+		    		if(airAttackPosition != null &&
+		    			squad.canAttackAir() && airAttackPosition.getApproxDistance(center) < attackPosition.getApproxDistance(center))
+		    			squad.setObjective(airAttackPosition);
+		    		else
+		    			squad.setObjective(attackPosition);
+		    	}
 		    	
 		    	game.drawLineMap(new Position(squad.getObjective().getX() - 5,  squad.getObjective().getY() - 5), 
 	        		new Position(squad.getObjective().getX() + 5,  squad.getObjective().getY() + 5), Color.Green);
@@ -2105,11 +2130,18 @@ public class GuiBot extends DefaultBWListener {
 	            	new Position(squad.getObjective().getX() - 5,  squad.getObjective().getY() + 5), Color.Green);
     		}
     	}
-    	game.drawLineMap(new Position(attackPosition.getX() - 5,  attackPosition.getY() - 5), 
-    		new Position(attackPosition.getX() + 5,  attackPosition.getY() + 5), Color.Red);
-    	game.drawLineMap(new Position(attackPosition.getX() + 5,  attackPosition.getY() - 5), 
-        	new Position(attackPosition.getX() - 5,  attackPosition.getY() + 5), Color.Red);
-        
+    	if(attackPosition != null) {
+	    	game.drawLineMap(new Position(attackPosition.getX() - 5,  attackPosition.getY() - 5), 
+	    		new Position(attackPosition.getX() + 5,  attackPosition.getY() + 5), Color.Red);
+	    	game.drawLineMap(new Position(attackPosition.getX() + 5,  attackPosition.getY() - 5), 
+	        	new Position(attackPosition.getX() - 5,  attackPosition.getY() + 5), Color.Red);
+    	}
+        if(airAttackPosition != null) {
+	    	game.drawLineMap(new Position(airAttackPosition.getX() - 5,  airAttackPosition.getY() - 5), 
+	    		new Position(airAttackPosition.getX() + 5,  airAttackPosition.getY() + 5), Color.Cyan);
+	    	game.drawLineMap(new Position(airAttackPosition.getX() + 5,  airAttackPosition.getY() - 5), 
+	        	new Position(airAttackPosition.getX() - 5,  airAttackPosition.getY() + 5), Color.Cyan);
+        }
     	//army commands go here
     	
     	//probe pulling
@@ -2156,6 +2188,7 @@ public class GuiBot extends DefaultBWListener {
 		    	if(squad.getUnits().size() >= 12 || squad.getCommand() == UnitState.ATTACKING
 		    		|| self.supplyUsed() >= 380 || aBaseIsUnderAttack
 	//	    		|| (center.getApproxDistance(squad.getObjective()) < 10*32 && squad.getUnitCount(UnitType.Protoss_Zealot) == 0)
+		    		|| squad.seesRangedEnemies()
 		    		|| (enemyRace == Race.Terran && self.getUpgradeLevel(UpgradeType.Singularity_Charge) > 0 && !enemyBuildingTab.containsKey(UnitType.Terran_Siege_Tank_Siege_Mode)
 		    		&& game.enemy().getUpgradeLevel(UpgradeType.Ion_Thrusters) == 0)) {
 		    		//recruit nearby idle units
@@ -2819,7 +2852,7 @@ public class GuiBot extends DefaultBWListener {
 		    	}	    	
 		    	if(bestTile == null) {	   
 		    		//build a spotter pylon
-			    	for(int x = baseTile.getX() - 42 + pylonSkip; x <= baseTile.getX() + 42; x += 5) {
+			    	for(int x = baseTile.getX() - 41 + pylonSkip; x <= baseTile.getX() + 43; x += 5) {
 			        	for(int y = baseTile.getY() - 45; y <= baseTile.getY() + 43; y += 6) {	
 			        		
 			        		nextTile = new TilePosition(x,y);
@@ -2897,7 +2930,7 @@ public class GuiBot extends DefaultBWListener {
 		    	for(int x = baseTile.getX() - 6; x <= baseTile.getX() + 8; x +=4) {
 		        	for(int y = baseTile.getY() - 6; y <= baseTile.getY() + 8; y +=3) {	      
 		        		xAdjust = x;
-		        		if(x <= baseTile.getX() - 2)
+		        		if(x < baseTile.getX() - 2)
 		        			xAdjust = x + 4-nextItem.tileWidth();
 		        		//don't place big buildings right next to nexus
 		        		if(!(Math.abs(x-baseTile.getX()) <= 4 && Math.abs(y-baseTile.getY()) <= 3)) {
@@ -2914,7 +2947,7 @@ public class GuiBot extends DefaultBWListener {
 		    	}
 		    	if(bestTile == null) {
 		    		//build a building close to nexus
-			    	for(int x = baseTile.getX() - 42; x <= baseTile.getX() + 42; x += 5) {
+			    	for(int x = baseTile.getX() - 41; x <= baseTile.getX() + 3; x += 5) {
 			        	for(int y = baseTile.getY() - 49; y <= baseTile.getY() + 45; y += 6) {	 
 			        		if(!(Math.abs(x-baseTile.getX()) <= 4 && Math.abs(y-baseTile.getY()) <= 3)) {
 				        		nextTile = new TilePosition(x,y);

@@ -357,6 +357,9 @@ public class MyUnit extends PositionedObject {
 		if(!u.isAttackFrame() && u.getGroundWeaponCooldown() > 0)
 			return true;
 		
+		if(u.getLastCommand().getUnitCommandType() == UnitCommandType.Use_Tech_Unit)
+			return false;
+			
 		if(u.getLastCommand().getUnitCommandType() == UnitCommandType.Attack_Move				
 			|| u.getLastCommand().getUnitCommandType() == UnitCommandType.Hold_Position
 			|| u.getLastCommand().getUnitCommandType() == UnitCommandType.Patrol) {
