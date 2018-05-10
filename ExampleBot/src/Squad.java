@@ -135,8 +135,8 @@ public class Squad {
 				groupUp();
 			}			
 		}
-		game.drawCircleMap(objective,range, Color.Red);
-		game.drawLineMap(objective, center, Color.Green);
+//		game.drawCircleMap(objective,range, Color.Red);
+//		game.drawLineMap(objective, center, Color.Green);
 	}
 	
 	public void mergeArchon(MyUnit myUnit) {

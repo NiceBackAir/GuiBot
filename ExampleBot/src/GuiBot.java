@@ -1307,6 +1307,11 @@ public class GuiBot extends DefaultBWListener {
     		nextBuilding = UnitType.Protoss_Stargate;    	
     	} else if(self.allUnitCount(UnitType.Protoss_Gateway) <2) {
     		nextBuilding = UnitType.Protoss_Gateway;  
+    	} else if(self.allUnitCount(UnitType.Protoss_Photon_Cannon) <3
+    		&& self.allUnitCount(UnitType.Protoss_Forge) > 0
+    		&& (enemyArmyTab.containsKey(UnitType.Zerg_Mutalisk) || enemyArmyTab.containsKey(UnitType.Zerg_Scourge) 
+    		|| enemyBuildingTab.containsKey(UnitType.Zerg_Spire))) {
+    		nextBuilding = UnitType.Protoss_Photon_Cannon;  
     	} else if(self.allUnitCount(UnitType.Protoss_Robotics_Facility) == 0) {
         	if(self.allUnitCount(UnitType.Protoss_Cybernetics_Core) > 0) 
         		nextBuilding = UnitType.Protoss_Robotics_Facility; 	
@@ -1329,12 +1334,14 @@ public class GuiBot extends DefaultBWListener {
     		&& self.completedUnitCount(UnitType.Protoss_Cybernetics_Core) > 0) {
     		
     		nextBuilding = UnitType.Protoss_Citadel_of_Adun;    	
-    	} else if(gasBases < 3) {
-    		nextBuilding = UnitType.Protoss_Nexus;    	
+    	} else if(self.allUnitCount(UnitType.Protoss_Gateway) <6) {
+    		nextBuilding = UnitType.Protoss_Gateway;  
     	} else if(self.allUnitCount(UnitType.Protoss_Templar_Archives) == 0
     		&& self.allUnitCount(UnitType.Protoss_Citadel_of_Adun) > 0) {
     		
-    		nextBuilding = UnitType.Protoss_Templar_Archives;    	
+    		nextBuilding = UnitType.Protoss_Templar_Archives;  
+    	} else if(gasBases < 3) {
+    		nextBuilding = UnitType.Protoss_Nexus;    	  	
 //    	} else if(self.allUnitCount(UnitType.Protoss_Fleet_Beacon) == 0
 //    		&& self.allUnitCount(UnitType.Protoss_Stargate) > 0) {
 //    		
@@ -1930,14 +1937,13 @@ public class GuiBot extends DefaultBWListener {
 		    		kiteForward = (threatVector[0]*targetVector[0] + threatVector[1]*targetVector[1] > scale*scale*Math.cos(Math.PI/4));
 	    		} 
 				if(weakestAirEnemy != null && myUnit.getAirWeaponCooldown() == 0) {
-					if(myUnit.getLastCommand().getUnitCommandType() != UnitCommandType.Attack_Unit)
+					if(!(myUnit.getLastCommand().getUnitCommandType() == UnitCommandType.Attack_Unit 
+						&& myUnit.getLastCommand().getTarget().equals(weakestAirEnemy)))
 						myUnit.attack(weakestAirEnemy);
 //					game.drawLineMap(myUnit.getX(), myUnit.getY(), weakestAirEnemy.getX(), weakestAirEnemy.getY(), Color.Red);
 //					game.drawLineMap(myUnit.getX(), myUnit.getY(), myUnit.getX()+(int)moveVector[0], myUnit.getY()+(int)moveVector[1], Color.Green);
-				} else if(weakestAirEnemy != null && myUnit.getAirWeaponCooldown() > 0 && !kiteForward) {
-					if(myUnit.getAirWeaponCooldown() < myUnit.getType().groundWeapon().damageCooldown()-1
-						&& !myUnit.isInWeaponRange(weakestAirEnemy))
-						
+				} else if(weakestAirEnemy != null && myUnit.getAirWeaponCooldown() > 0) {
+					if(!myUnit.isAttackFrame() && (kiteForward || !myUnit.isInWeaponRange(weakestAirEnemy)))
 						myUnit.move(weakestAirEnemy.getPosition());
 //					game.drawLineMap(myUnit.getX(), myUnit.getY(), weakestAirEnemy.getX(), weakestAirEnemy.getY(), Color.Red);
 //					game.drawLineMap(myUnit.getX(), myUnit.getY(), myUnit.getX()+(int)moveVector[0], myUnit.getY()+(int)moveVector[1], Color.Green);
@@ -2078,7 +2084,7 @@ public class GuiBot extends DefaultBWListener {
 						&& !hisUnit.isInvincible() && hisUnit.getType() != UnitType.Zerg_Larva
 						&& hisUnit.getType() != UnitType.Zerg_Egg && hisUnit.getType() != UnitType.Resource_Vespene_Geyser) {
 						
-						if(!hisTurret.getUnit().isFlying() || canAttackAir) {
+						if(!hisUnit.isFlying() || canAttackAir) {
 							if((!hisUnit.getType().isBuilding() || hisUnit.getType().canAttack() || hisUnit.getType() == UnitType.Terran_Bunker)
 								&& (closestSquishy == null || hisUnit.getPosition().getApproxDistance(center) 
 								< closestSquishy.getPosition().getApproxDistance(center))) {
@@ -2449,7 +2455,10 @@ public class GuiBot extends DefaultBWListener {
 		    					if(u.getType() == UnitType.Protoss_Reaver && u.getScarabCount() > 0 
 		    						&& closestGroundSquishy != null		
 		    						&& BWTA.getRegion(myUnit.getPosition()) != null			
-		    			    		&& BWTA.getRegion(myUnit.getPosition()).equals(BWTA.getRegion(closestGroundSquishy.getPosition()))) { 
+//		    			    		&& BWTA.getRegion(myUnit.getPosition()).equals(BWTA.getRegion(closestGroundSquishy.getPosition()))
+		    						&& closestGroundSquishy.hasPath(u.getPosition())
+		    			    		&& BWTA.getGroundDistance(u.getTilePosition(), closestGroundSquishy.getTilePosition()) <= 8*32
+		    			    		) { 
 		    						
 		    						if(myUnit.getDistance(closestGroundSquishy) <= 8*32)
 		    							myUnit.unload(u);
@@ -2504,7 +2513,7 @@ public class GuiBot extends DefaultBWListener {
 		    							//move to reavers that are almost done
 										followUnit = u;		    							
 									}	   
-    							} else if(u.getTransport().equals(myUnit)) {
+    							} else if(u.getTransport().getID() == myUnit.getID()) {
     								hasReaver = true;
     							}
     						}		    							
@@ -2924,6 +2933,19 @@ public class GuiBot extends DefaultBWListener {
 	        			}
 	            	}
 	            }   
+	    	} else if (nextItem == UnitType.Protoss_Photon_Cannon) {  
+		    	for(int x = baseTile.getX() - 2; x <= baseTile.getX() + 4; x +=2) {
+		        	for(int y = baseTile.getY() - 2; y <= baseTile.getY() + 3; y +=5) {	
+		        		nextTile = new TilePosition(x,y);
+		        		buildingCenter = new Position(nextTile.toPosition().getX() + nextItem.tileWidth()*16
+								, nextTile.toPosition().getY() + nextItem.tileHeight()*16);	
+		        		
+	            		if(shouldBuildHere(nextItem, nextTile, mainChoke, bestPosition, false)) {
+		            		bestTile = nextTile;
+		        			bestPosition = buildingCenter;
+	            		}
+		        	}
+		    	}	
 	    	} else {
 	    		int xAdjust = 0;
 	    		//all other buildings
@@ -2947,7 +2969,7 @@ public class GuiBot extends DefaultBWListener {
 		    	}
 		    	if(bestTile == null) {
 		    		//build a building close to nexus
-			    	for(int x = baseTile.getX() - 41; x <= baseTile.getX() + 3; x += 5) {
+			    	for(int x = baseTile.getX() - 41; x <= baseTile.getX() + 43; x += 5) {
 			        	for(int y = baseTile.getY() - 49; y <= baseTile.getY() + 45; y += 6) {	 
 			        		if(!(Math.abs(x-baseTile.getX()) <= 4 && Math.abs(y-baseTile.getY()) <= 3)) {
 				        		nextTile = new TilePosition(x,y);
