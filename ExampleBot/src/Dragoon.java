@@ -39,7 +39,7 @@ public class Dragoon extends MyUnit {
 					if(target.isStimmed())
 						hisSpeed *= 1.5;
 					int hisRange = game.enemy().weaponMaxRange(target.getType().groundWeapon());
-					if(target.getType().canMove()) {
+					if(target.getType().canMove() || target.getType() == UnitType.Terran_Bunker) {
 //						&&	Math.max(myRange - hisRange, u.getDistance(target)) + 8*(u.getType().topSpeed() - hisSpeed) > 0 ) {
 						//kiting behavior
 						moveAwayFrom(target.getPosition());

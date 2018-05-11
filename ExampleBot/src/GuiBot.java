@@ -168,7 +168,8 @@ public class GuiBot extends DefaultBWListener {
 	    	if(scoutingProbe != null && unit.getID() == scoutingProbe.getID()) {
 	    		Unit p = null;
 	    		for(Unit u: self.getUnits()) {
-	    			if(u.getType() == UnitType.Protoss_Probe && (p == null 
+	    			if(u.getType() == UnitType.Protoss_Probe && !u.isCarryingGas() && !u.isCarryingMinerals()
+	    				&& (p == null 
 	    				|| u.getPosition().getApproxDistance(unit.getPosition()) < p.getPosition().getApproxDistance(unit.getPosition()))) {
 	    				
 	    				p = u;
@@ -395,7 +396,7 @@ public class GuiBot extends DefaultBWListener {
         //define chokepoints
         for(BaseLocation baseLocation : BWTA.getBaseLocations()){
         	if(!baseLocation.getPosition().equals(BWTA.getStartLocation(self).getPosition())
-        		&& !baseLocation.isIsland() && (natural == null
+        		&& !baseLocation.isIsland() && !baseLocation.isMineralOnly() && (natural == null
         		|| baseLocation.getGroundDistance(BWTA.getStartLocation(self)) < natural.getGroundDistance(BWTA.getStartLocation(self)))) {
         		natural = baseLocation;
         	}
@@ -408,7 +409,14 @@ public class GuiBot extends DefaultBWListener {
         		mainChoke = choke;
         	}
         }
-        
+        if(mainChoke == null) {
+        	//Andromeda only pretty much
+            for(Chokepoint choke: natural.getRegion().getChokepoints()) {
+            	if(mainChoke == null || choke.getWidth() < mainChoke.getWidth()) {
+            		mainChoke = choke;
+            	}
+            }
+        }
         for(Chokepoint choke: natural.getRegion().getChokepoints()) {
         	if(!choke.equals(mainChoke) && (naturalChoke == null || choke.getWidth() > naturalChoke.getWidth())) {
         		naturalChoke = choke;
@@ -2099,7 +2107,9 @@ public class GuiBot extends DefaultBWListener {
 						}
 						
 						//figure out if enemy has ranged units so you can stop holding choke
-						if(hisUnit.getType().groundWeapon() != WeaponType.None && hisUnit.getType().groundWeapon().maxRange() > 32)
+						if(hisUnit.getType().groundWeapon() != WeaponType.None && game.enemy().weaponMaxRange(hisUnit.getType().groundWeapon()) > 32
+							&& (center.getApproxDistance(hisUnit.getPosition()) <= game.enemy().weaponMaxRange(hisUnit.getType().groundWeapon()) + 32
+							|| hisUnit.isAttacking()))
 							squad.setSeesRangedEnemies(true);
 					}
 				}

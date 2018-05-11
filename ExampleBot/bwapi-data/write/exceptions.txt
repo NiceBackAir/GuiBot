@@ -15299,3 +15299,22 @@ vs Velari Tribe (Protoss) on(4)Fighting Spirit.scx
 vs Ara Tribe (Protoss) on(4)Python.scx
 148
 vs Venatir Tribe (Protoss) on(4)Python.scx
+vs Sargas Tribe (Protoss) on(2)Benzene.scx
+vs Furinax Tribe (Protoss) on(2)Benzene.scx
+vs Jormungand Brood (Zerg) on(4)Andromeda.scx
+145
+vs Tiamat Brood (Zerg) on(4)Andromeda.scx
+vs Garm Brood (Zerg) on(4)Andromeda.scx
+vs Furinax Tribe (Protoss) on(4)Andromeda.scx
+142
+91
+92
+93
+93
+91
+93
+93
+96
+91
+92
+87
