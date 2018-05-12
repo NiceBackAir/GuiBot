@@ -107,7 +107,8 @@ public class GuiBot extends DefaultBWListener {
     	try {
 	    	if(game.getFrameCount() > 0) {
 	    		if(unit.getPlayer() == game.enemy()) {
-			    	if(unit.getType().isBuilding() || unit.getType() == UnitType.Terran_Siege_Tank_Siege_Mode) {    	
+			    	if(unit.getType().isBuilding() || unit.getType() == UnitType.Terran_Siege_Tank_Siege_Mode
+			    		|| unit.getType() == UnitType.Terran_Vulture_Spider_Mine) {    	
 			    		enemyBuildings.put(unit.getID(), new HisUnit(unit, game));
 			    	} else if(unit.getType() != UnitType.Zerg_Larva && unit.getType() != UnitType.Zerg_Egg 
 			    		&& unit.getType() != UnitType.Protoss_Scarab){
@@ -940,16 +941,15 @@ public class GuiBot extends DefaultBWListener {
 	        	if (enemyMain == null && hisUnit.getType().isBuilding()) {
 	        		enemyMain = hisUnit.getTilePosition();
 	        	}
-	        	if(hisUnit.isFlying() && (airAttackPosition == null || hisUnit.getPosition().getApproxDistance(self.getStartLocation().toPosition()) 
-	        		< airAttackPosition.getApproxDistance(self.getStartLocation().toPosition()))) {
+	        	if(hisUnit.isFlying() && (airAttackPosition == null || safety(hisUnit.getPosition())
+	        		> safety(airAttackPosition))) {
 	        		
 	        		airAttackPosition = hisUnit.getPosition();
 	        	}
 	        	if(hisUnit.getType() != UnitType.Zerg_Larva && hisUnit.getType() != UnitType.Zerg_Egg
 	        		&& hisUnit.isDetected() && hisUnit.getType() != UnitType.Resource_Vespene_Geyser && !hisUnit.isFlying()
 		        	&& (!hisUnit.getType().isBuilding() || hisUnit.getType().canAttack() || hisUnit.getType() == UnitType.Terran_Bunker)
-		        	&& (attackPosition == null || hisUnit.getPosition().getApproxDistance(self.getStartLocation().toPosition()) 
-	        		< attackPosition.getApproxDistance(self.getStartLocation().toPosition()) && hisUnit.getType() != UnitType.Zerg_Overlord)) {
+		        	&& (attackPosition == null || safety(hisUnit.getPosition()) > safety(attackPosition))) {
 	        		
 	        		attackPosition = hisUnit.getPosition();
 	        	}
@@ -1020,9 +1020,9 @@ public class GuiBot extends DefaultBWListener {
         	//if no units to attack, go for buildings
 	        for(int i: enemyBuildings.keySet()) {
 	        	u = enemyBuildings.get(i);
-	        	if (u.getType() != UnitType.Resource_Vespene_Geyser && 
-	        		(u.getPosition() != null && (attackPosition == null || u.getPosition().getApproxDistance(self.getStartLocation().toPosition()) 
-	        		< attackPosition.getApproxDistance(self.getStartLocation().toPosition())))) {
+	        	if (u.getType() != UnitType.Resource_Vespene_Geyser 
+	        		&& (u.getPosition() != null && (attackPosition == null || safety(u.getPosition()) 
+	        		> safety(attackPosition)))) {
 	        		
 	        		attackPosition = u.getPosition();
 	        	}
@@ -1810,18 +1810,23 @@ public class GuiBot extends DefaultBWListener {
 				}
     		}	
     		
+    		Unit cloakedTarget = null;
     		//observers have global priority to detect
     		if(myUnit.getType() == UnitType.Protoss_Observer) {
         		for(Unit hisUnit: game.enemy().getUnits()) {		
 					if(hisUnit.isCompleted() && hisUnit.isVisible()
 	    				&& (hisUnit.getType().hasPermanentCloak() || hisUnit.getType().isCloakable() 
-	    				|| hisUnit.isBurrowed()|| hisUnit.getType() == UnitType.Zerg_Lurker)) {
+	    				|| hisUnit.isBurrowed()|| hisUnit.getType() == UnitType.Zerg_Lurker)
+	    				&& (cloakedTarget == null || safety(hisUnit.getPosition()) > safety(cloakedTarget.getPosition()))) {
 						
-						d = myUnit.getPosition().getApproxDistance(hisUnit.getPosition());
-    					targetVector[0] += 3*scale/d*(hisUnit.getX()-myUnit.getX());
-    					targetVector[1] += 3*scale/d*(hisUnit.getY()-myUnit.getY());
+						cloakedTarget = hisUnit;
 					} 
         		}	
+    		}
+    		if(cloakedTarget != null) {
+				d = myUnit.getPosition().getApproxDistance(cloakedTarget.getPosition());
+				targetVector[0] += 3*scale/d*(cloakedTarget.getX()-myUnit.getX());
+				targetVector[1] += 3*scale/d*(cloakedTarget.getY()-myUnit.getY());
     		}
          	
          	int hitsToKillHim;
@@ -2927,8 +2932,7 @@ public class GuiBot extends DefaultBWListener {
 	            	}
 	            	//metric of which base to take
 	            	if(enemyMain != null) 
-		            	basePriority = 1.0/Math.max(1, b.getPosition().getApproxDistance(self.getStartLocation().toPosition()))
-	            			- 1.0/Math.max(1, b.getPosition().getApproxDistance(enemyMain.toPosition()));
+		            	basePriority = safety(b.getPosition());
 	            		
 	        		if(!b.isIsland()  && !baseTaken) {//&& !b.isMineralOnly()
 	        			if(self.allUnitCount(UnitType.Protoss_Nexus) == 1 || enemyMain == null) {
@@ -3012,6 +3016,21 @@ public class GuiBot extends DefaultBWListener {
     	game.drawBoxMap(nextItemX*PIXELS_PER_TILE, nextItemY*PIXELS_PER_TILE, (nextItemX+nextItem.tileWidth())*PIXELS_PER_TILE,
     			(nextItemY+nextItem.tileHeight())*PIXELS_PER_TILE, new Color(0,255,255));
     }
+    
+    public double safety(Position pos) {
+    	if(enemyMain != null)
+    		return safety(pos, self.getStartLocation().toPosition(), enemyMain.toPosition());
+    	else
+    		return safety(pos, self.getStartLocation().toPosition(), null);
+    }
+    
+    public double safety(Position pos, Position source, Position sink) {
+    	if(sink != null)
+	    	return 1.0/Math.max(1, pos.getApproxDistance(source))
+	    		   -1.0/Math.max(1, pos.getApproxDistance(sink));
+    	else 
+    		return 1.0/Math.max(1, pos.getApproxDistance(source));
+    }    
     
     /** Enhances the game.canBuildHere method, ignoring the building probe for collision and leaving space for expos
      * 

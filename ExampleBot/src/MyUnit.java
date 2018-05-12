@@ -143,7 +143,8 @@ public class MyUnit extends PositionedObject {
 			
 			if(u.isAttackFrame() && u.getLastCommand().getUnitCommandType() != UnitCommandType.Stop)
 				u.stop();
-			else if(u.getLastCommand().getUnitCommandType() != UnitCommandType.Move || u.getLastCommand().getTargetPosition() != pos)
+//			else if(u.getLastCommand().getUnitCommandType() != UnitCommandType.Move || u.getLastCommand().getTargetPosition() != pos)
+			else
 				u.move(pos);
 //			game.drawLineMap(u.getPosition(), pos, Color.Teal);
 		} 

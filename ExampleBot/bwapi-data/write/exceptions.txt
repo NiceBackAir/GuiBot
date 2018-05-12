@@ -15318,3 +15318,23 @@ vs Furinax Tribe (Protoss) on(4)Andromeda.scx
 91
 92
 87
+vs Epsilon Squadron (Terran) on(4)Andromeda.scx
+150
+vs Cronus Wing (Terran) on(4)Andromeda.scx
+vs Epsilon Squadron (Terran) on(4)Andromeda.scx
+vs Ara Tribe (Unknown) on(4)Andromeda.scx
+146
+vs Mar Sara (Terran) on(4)Andromeda.scx
+vs Shelak Tribe (Protoss) on(4)Andromeda.scx
+vs Kel-Morian Combine (Terran) on(2)Benzene.scx
+150
+vs Surtur Brood (Zerg) on(2)Benzene.scx
+149
+vs Fenris Brood (Zerg) on(2)Benzene.scx
+150
+vs Surtur Brood (Zerg) on(2)Benzene.scx
+154
+vs Garm Brood (Zerg) on(2)Benzene.scx
+154
+vs Antiga (Terran) on(4)Electric Circuit.scx
+153
