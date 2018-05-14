@@ -94,7 +94,8 @@ public class Squad {
 		boolean attackBuildings = false;
 		for(Unit hisUnit: game.getUnitsInRadius(center, 8*32)) {
 			if(hisUnit.getPlayer() == game.enemy() && hisUnit.isDetected() && !hisUnit.isInvincible()
-				&& hisUnit.getType() != UnitType.Resource_Vespene_Geyser					
+				&& hisUnit.getType() != UnitType.Resource_Vespene_Geyser 
+				&& (hisUnit.isCompleted() || hisUnit.getType().isBuilding()|| hisUnit.getType() == UnitType.Zerg_Lurker_Egg)			
 				&& hisUnit.getType() != UnitType.Zerg_Egg && hisUnit.getType() != UnitType.Zerg_Larva ) {
 				
 				attackBuildings = true;

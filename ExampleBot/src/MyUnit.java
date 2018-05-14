@@ -1,7 +1,11 @@
+import java.util.HashMap;
+import java.util.Map;
+
 import bwapi.Color;
 import bwapi.Game;
 import bwapi.Position;
 import bwapi.PositionedObject;
+import bwapi.TilePosition;
 import bwapi.Unit;
 import bwapi.UnitCommandType;
 import bwapi.UnitType;
@@ -11,7 +15,7 @@ import bwta.Chokepoint;
 
 public class MyUnit extends PositionedObject {
 	protected Unit u;
-	protected Position objective;
+//	protected Position objective;
 	protected Position attackPoint;
 	protected Unit target;
 	protected Position retreatPoint;
@@ -22,6 +26,7 @@ public class MyUnit extends PositionedObject {
 	protected Game game;
 	protected int cancelFrames;
 	protected Position techPosition;
+	protected boolean isRequestingEvac;
 	
 	public static MyUnit createFrom(Unit u, Game game) {
 		if (u == null) {
@@ -86,10 +91,11 @@ public class MyUnit extends PositionedObject {
 			if(isFree(target)) {
 				if(u.getGroundWeaponCooldown() == 0) {
 					if(!(u.getLastCommand().getUnitCommandType() == UnitCommandType.Attack_Unit
-						&& !u.getLastCommand().getTarget().equals(target)) && u.isInWeaponRange(target))
+						&& !u.getLastCommand().getTarget().equals(target)) && u.isInWeaponRange(target)) {
 					
 						u.attack(target);
 						gotCommand = true;
+					}
 //				} else {
 //					move(target.getPosition());
 //					gotCommand = true;
@@ -153,15 +159,15 @@ public class MyUnit extends PositionedObject {
 	public void moveAwayFrom(Position pos) throws Exception {
 		double d = u.getPosition().getApproxDistance(pos);
 		double[] moveVector = {(u.getX()-pos.getX())*scale/d, (u.getY()-pos.getY())*scale/d};
-		moveVector = terrainCorrection(moveVector);
-		moveVector = adjustForWalls(moveVector, u);
+		moveVector = GuiBot.setMagnitude(terrainCorrection(moveVector), scale);
+		moveVector = GuiBot.setMagnitude(adjustForWalls(moveVector, u), scale);
  		
 		Position destination = new Position(u.getX()+(int)moveVector[0], u.getY()+(int)moveVector[1]);
 
 		move(destination);
 
  		gotCommand = true;
-// 		game.drawLineMap(u.getPosition(), destination, Color.White);
+ 		game.drawLineMap(u.getPosition(), destination, Color.White);
 	}
 	
 	/** Surround enemies like water, literally
@@ -195,6 +201,10 @@ public class MyUnit extends PositionedObject {
  		move(destination);
  		gotCommand = true;
 	}
+	
+	public void commandShuttle(Position attackPosition) throws Exception {
+		
+	}
 	public double[] terrainCorrection(double[] moveVector) {
 		double d;
 		double[] terrainVector = new double[2];
@@ -203,22 +213,29 @@ public class MyUnit extends PositionedObject {
  		int tileY = u.getTilePosition().getY();
  		int xPos;
  		int yPos;
- 		if(GuiBot.walkMap[tileX][tileY] == 0) {
- 			for(int x=tileX-1; x<= tileX+1; x++) {
- 				for(int y=tileY-1;y<=tileY+1;y++) {
- 					if(x>=0 && x<game.mapWidth() && y>=0 && y<=game.mapHeight()) {
-     					xPos = x*32 + 16;
-     					yPos = y*32 + 16;
-     					d = u.getPosition().getApproxDistance(new Position(xPos, yPos));
-     					terrainVector[0] += -(GuiBot.walkMap[x][y]-GuiBot.walkMap[tileX][tileY])*(xPos-u.getX())/d;
-     					terrainVector[1] += -(GuiBot.walkMap[x][y]-GuiBot.walkMap[tileX][tileY])*(yPos-u.getY())/d;
+		for(int x=tileX-1; x<= tileX+1; x++) {
+			for(int y=tileY-1;y<=tileY+1;y++) {
+				if(x>=0 && x<game.mapWidth() && y>=0 && y<=game.mapHeight() && x != tileX && y != tileY) {
+ 					xPos = x*32 + 16;
+ 					yPos = y*32 + 16;
+ 					//tile is in direction of movement
+ 					if(((xPos-u.getX())*moveVector[0] + (yPos-u.getY())*moveVector[1])>= 0) {
+ 						//check for stuff in the way
+ 						if(GuiBot.walkMap[x][y] > 0 || game.getUnitsOnTile(x, y).size() > 0) {
+	     					d = u.getPosition().getApproxDistance(new Position(xPos, yPos));
+	     					terrainVector[0] -= (xPos-u.getX())/d;
+	     					terrainVector[1] -= (yPos-u.getY())/d;
+//	     					terrainVector[0] += -(GuiBot.walkMap[x][y]-GuiBot.walkMap[tileX][tileY])*(xPos-u.getX())/d;
+//	     					terrainVector[1] += -(GuiBot.walkMap[x][y]-GuiBot.walkMap[tileX][tileY])*(yPos-u.getY())/d;
+				 		} 
  					}
- 				}
- 			}
- 		}
+				}
+			}
+		}
+
  		terrainVector = GuiBot.setMagnitude(terrainVector, 1);
  		terrainVector = GuiBot.setMagnitude(terrainVector, -terrainVector[0]*moveVector[0]-terrainVector[1]*moveVector[1]);
-
+ 		game.drawLineMap(u.getPosition(), new Position(u.getX() + (int)terrainVector[0], u.getY() + (int)terrainVector[1]), Color.Orange);
  		moveVector[0] += terrainVector[0];
  		moveVector[1] += terrainVector[1];
  		return moveVector;
@@ -334,7 +351,8 @@ public class MyUnit extends PositionedObject {
 //		System.out.println(range);
 		for(Unit hisUnit: u.getUnitsInRadius(range)) {// u.getUnitsInWeaponRange(u.getType().groundWeapon())) {
 			if(hisUnit.getPlayer() == game.enemy()) {
-				if(u.isInWeaponRange(hisUnit) && hisUnit.isDetected() && !hisUnit.isInvincible()// && u.canAttack(hisUnit, true, false, false)
+				if(hisUnit.isDetected() && !hisUnit.isInvincible() //u.isInWeaponRange(hisUnit) && 
+					&& (hisUnit.isCompleted() || hisUnit.getType().isBuilding())// && u.canAttack(hisUnit, true, false, false)
 					&& (attackBuildings || !hisUnit.getType().isBuilding() || hisUnit.getType().canAttack()
 					|| hisUnit.getType() == UnitType.Terran_Bunker)					
 					&& hisUnit.getType() != UnitType.Zerg_Egg && hisUnit.getType() != UnitType.Zerg_Larva ) {
@@ -349,6 +367,65 @@ public class MyUnit extends PositionedObject {
 //			game.drawLineMap(u.getPosition(), closestEnemy.getPosition(), Color.White);
 		return closestEnemy;
 	}
+	
+	public Position getTargetPosition() throws Exception {
+		HashMap<TilePosition, Double> stormMap = new HashMap<TilePosition, Double>();
+		TilePosition tempTile = null;
+		int playerFactor;
+		double tileFactor;
+		double cloakFactor;
+		for (Unit unit: u.getUnitsInRadius(13*32)) {
+			if(!unit.getType().isBuilding() && !unit.isUnderStorm() && unit.getType() != UnitType.Zerg_Larva
+				&& unit.getType() != UnitType.Zerg_Egg && !unit.isLoaded()) {
+				
+				playerFactor = 0;
+				tileFactor = 1;
+				cloakFactor = 1;
+				
+				if(unit.getPlayer() == game.enemy()) {
+					playerFactor = 1;
+					if(!unit.isDetected() && unit.isVisible()) {
+						cloakFactor = 2;
+					}
+				} else if(unit.getPlayer() == game.self()) {
+					playerFactor = -1;
+				}
+				
+				for(int x = -1; x<=1; x++) {
+					for(int y = -1; y<=1; y++) {
+						if(x==0 && y== 0) {
+							tileFactor = 1;
+						} else {
+							tileFactor = 0.8;
+						}
+						tempTile = new TilePosition(unit.getTilePosition().getX() +x, unit.getTilePosition().getY() + y);
+						if(stormMap.get(tempTile) == null) {
+							stormMap.put(tempTile, playerFactor*tileFactor*cloakFactor);
+						} else {
+							stormMap.replace(tempTile, stormMap.get(tempTile) + playerFactor*tileFactor*cloakFactor);
+						}
+					}
+				}
+
+			}
+		}
+		
+		//find the best storm spot
+		TilePosition stormLocation = null;
+		double mostCasualties = 0;
+		for(Map.Entry<TilePosition, Double> entry: stormMap.entrySet()) {
+			//set storm minimum here
+			if(entry.getValue() >= 3.5 && entry.getValue() > mostCasualties) {
+				mostCasualties = entry.getValue();
+				stormLocation = entry.getKey();
+			}
+		}
+		if(stormLocation != null)
+			return new Position(stormLocation.getX()*32 + 16, stormLocation.getY()*32 + 16);
+		else
+			return null;
+	}
+	
 	//default check to see if unit's attack will not be interrupted with another command. Good for zealots, DTs, and Archons
 	public boolean isFree() throws Exception {
 		if(gotCommand)
@@ -365,7 +442,8 @@ public class MyUnit extends PositionedObject {
 			|| u.getLastCommand().getUnitCommandType() == UnitCommandType.Hold_Position
 			|| u.getLastCommand().getUnitCommandType() == UnitCommandType.Patrol) {
 			
-			if(target != null && target.exists() && u.isInWeaponRange(target)) {
+			if(target != null && target.exists()
+				&& (u.isInWeaponRange(target) || u.getDistance(target) < u.getType().seekRange())) {
 				return false;
 			}
 				
@@ -383,11 +461,15 @@ public class MyUnit extends PositionedObject {
 			return true;
 		if(u.getLastCommand().getTarget() != null && u.getLastCommand().getTarget().equals(hisUnit)
 			&& hisUnit.isDetected() && hisUnit.getType() != UnitType.Resource_Vespene_Geyser 
-			&& hisUnit.exists() && u.isInWeaponRange(hisUnit)) {// && u.canAttack(hisUnit, true, false, false)) {
+			&& hisUnit.exists() && (u.isInWeaponRange(hisUnit) || u.getDistance(hisUnit) <= u.getType().seekRange())) {
 			
 			return false;
 		}
 		return true;
+	}
+	
+	public boolean isRequestingEvac() {
+		return isRequestingEvac;
 	}
 	
 	//respond to a bulk army retreat command
