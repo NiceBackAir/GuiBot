@@ -352,7 +352,7 @@ public class MyUnit extends PositionedObject {
 		for(Unit hisUnit: u.getUnitsInRadius(range)) {// u.getUnitsInWeaponRange(u.getType().groundWeapon())) {
 			if(hisUnit.getPlayer() == game.enemy()) {
 				if(hisUnit.isDetected() && !hisUnit.isInvincible() //u.isInWeaponRange(hisUnit) && 
-					&& (hisUnit.isCompleted() || hisUnit.getType().isBuilding())// && u.canAttack(hisUnit, true, false, false)
+					&& (hisUnit.isCompleted() || hisUnit.getType().isBuilding() || hisUnit.getType() == UnitType.Zerg_Lurker_Egg)
 					&& (attackBuildings || !hisUnit.getType().isBuilding() || hisUnit.getType().canAttack()
 					|| hisUnit.getType() == UnitType.Terran_Bunker)					
 					&& hisUnit.getType() != UnitType.Zerg_Egg && hisUnit.getType() != UnitType.Zerg_Larva ) {
