@@ -167,7 +167,7 @@ public class MyUnit extends PositionedObject {
 		move(destination);
 
  		gotCommand = true;
- 		game.drawLineMap(u.getPosition(), destination, Color.White);
+// 		game.drawLineMap(u.getPosition(), destination, Color.White);
 	}
 	
 	/** Surround enemies like water, literally
@@ -202,7 +202,7 @@ public class MyUnit extends PositionedObject {
  		gotCommand = true;
 	}
 	
-	public void commandShuttle(Position attackPosition) throws Exception {
+	public void commandShuttle(HisBase dropBase) throws Exception {
 		
 	}
 	public double[] terrainCorrection(double[] moveVector) {
@@ -235,7 +235,7 @@ public class MyUnit extends PositionedObject {
 
  		terrainVector = GuiBot.setMagnitude(terrainVector, 1);
  		terrainVector = GuiBot.setMagnitude(terrainVector, -terrainVector[0]*moveVector[0]-terrainVector[1]*moveVector[1]);
- 		game.drawLineMap(u.getPosition(), new Position(u.getX() + (int)terrainVector[0], u.getY() + (int)terrainVector[1]), Color.Orange);
+// 		game.drawLineMap(u.getPosition(), new Position(u.getX() + (int)terrainVector[0], u.getY() + (int)terrainVector[1]), Color.Orange);
  		moveVector[0] += terrainVector[0];
  		moveVector[1] += terrainVector[1];
  		return moveVector;
@@ -332,10 +332,10 @@ public class MyUnit extends PositionedObject {
 						attack(choke.getRegions().first.getCenter(), false);
 					}
 				}
-			} else if(target != null) {
-				attack(target.getPosition(), false);
+			} else if(choke.getCenter().getApproxDistance(u.getPosition()) > 10*32 || target == null) {
+				move(choke.getCenter());
 			} else {
-				attack(choke.getCenter(), false);
+				attack(target.getPosition(), false);
 			}
 		} else {
 		}
@@ -346,7 +346,7 @@ public class MyUnit extends PositionedObject {
 		Unit closestEnemy = null;
 		int range = Math.max(u.getType().seekRange(), game.self().weaponMaxRange(u.getType().groundWeapon()));
 		if(range == 0 || !u.getType().canAttack()) {
-			range = u.getType().sightRange();
+			range = u.getType().sightRange() + 32;
 		}
 //		System.out.println(range);
 		for(Unit hisUnit: u.getUnitsInRadius(range)) {// u.getUnitsInWeaponRange(u.getType().groundWeapon())) {
@@ -354,7 +354,8 @@ public class MyUnit extends PositionedObject {
 				if(hisUnit.isDetected() && !hisUnit.isInvincible() //u.isInWeaponRange(hisUnit) && 
 					&& (hisUnit.isCompleted() || hisUnit.getType().isBuilding() || hisUnit.getType() == UnitType.Zerg_Lurker_Egg)
 					&& (attackBuildings || !hisUnit.getType().isBuilding() || hisUnit.getType().canAttack()
-					|| hisUnit.getType() == UnitType.Terran_Bunker)					
+					|| hisUnit.getType() == UnitType.Terran_Bunker)		
+					&& (!hisUnit.isFlying() || u.getType().airWeapon() != WeaponType.None)
 					&& hisUnit.getType() != UnitType.Zerg_Egg && hisUnit.getType() != UnitType.Zerg_Larva ) {
 					
 					if(closestEnemy == null || hisUnit.getDistance(u) < closestEnemy.getDistance(u)) {

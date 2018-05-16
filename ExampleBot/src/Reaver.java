@@ -6,25 +6,26 @@ import bwapi.UnitType;
 import bwta.BWTA;
 
 public class Reaver extends MyUnit {
-
+	private boolean shotsFired;
+	
 	public Reaver(Unit u, Game game) {
 		super(u, game);
 		// TODO Auto-generated constructor stub
+		shotsFired = false;
 	}
 
 	public void attack(Position pos, boolean attackBuildings) throws Exception {
-		if(u.isLoaded())
-			isRequestingEvac = false;
 		target = getTarget(attackBuildings);
-		if(target != null) {
+		if(target != null && target.exists()) {
 			if(isFree(target)) {
 				if((u.getGroundWeaponCooldown() == 0 || u.isAttackFrame()) && u.getScarabCount() > 0) {
 					if(!(u.getLastCommand().getUnitCommandType() == UnitCommandType.Attack_Unit
 						&& !u.getLastCommand().getTarget().equals(target))) {
 					
-//						isRequestingEvac = true;
 						u.attack(target);						
 						gotCommand = true;
+						shotsFired = true;
+					} else {
 					}
 				} else {
 					if(u.getDistance(target) > 8*32) {
@@ -33,8 +34,7 @@ public class Reaver extends MyUnit {
 						moveAwayFrom(target.getPosition());
 					}
 					
-					if(u.getLastCommand().getUnitCommandType() == UnitCommandType.Attack_Unit 
-						|| u.getLastCommand().getUnitCommandType() == UnitCommandType.Train) {
+					if(shotsFired) {
 						isRequestingEvac = true;
 					}
 				}
@@ -43,33 +43,46 @@ public class Reaver extends MyUnit {
 		} else if(isFree()) {
 			isRequestingEvac = true;
 			move(pos);
-//			gotCommand = true;
 		} else {
-			isRequestingEvac = true;
+			if(shotsFired) {
+				isRequestingEvac = true;
+			}
 		}
-		game.drawTextMap(u.getPosition(),""+isRequestingEvac() + " " + u.getLastCommand().getUnitCommandType());
+		
+		if(u.isLoaded()) {
+			isRequestingEvac = false;
+			shotsFired = false;
+		}
+//		game.drawTextMap(u.getPosition(),"  "+isRequestingEvac() + " " + u.getLastCommand().getUnitCommandType());
 	}
 	
 	public Unit getTarget(boolean attackBuildings) throws Exception {
 		Unit closestEnemy = null;
-		int range = Math.max(u.getType().seekRange(), game.self().weaponMaxRange(u.getType().groundWeapon()));
-		if(range == 0 || !u.getType().canAttack()) {
-			range = u.getType().sightRange();
-		}
+		int range = 8*32+16;
 //		System.out.println(range);
+		double groundDistance = 0;
 		for(Unit hisUnit: u.getUnitsInRadius(range)) {// u.getUnitsInWeaponRange(u.getType().groundWeapon())) {
 			if(hisUnit.getPlayer() == game.enemy()) {
-				if(hisUnit.isDetected() && !hisUnit.isInvincible() //u.isInWeaponRange(hisUnit) && 
+				if(hisUnit.isDetected() && !hisUnit.isInvincible() && !hisUnit.isFlying() //u.isInWeaponRange(hisUnit) && 
 					&& (hisUnit.isCompleted() || hisUnit.getType().isBuilding() || hisUnit.getType() == UnitType.Zerg_Lurker_Egg)
 					&& (attackBuildings || !hisUnit.getType().isBuilding() || hisUnit.getType().canAttack()
 					|| hisUnit.getType() == UnitType.Terran_Bunker)					
 					&& hisUnit.getType() != UnitType.Zerg_Egg && hisUnit.getType() != UnitType.Zerg_Larva
-					&& BWTA.getGroundDistance(u.getTilePosition(), hisUnit.getTilePosition()) < range) {
+					&& hisUnit.hasPath(u)) {
 					
-					if(closestEnemy == null || hisUnit.getDistance(u) < closestEnemy.getDistance(u)) {
-						closestEnemy = hisUnit;
+					if(BWTA.getRegion(u.getPosition()) == BWTA.getRegion(u.getPosition()))
+						groundDistance = hisUnit.getPosition().getDistance(u.getPosition());
+					else
+						groundDistance = BWTA.getGroundDistance(hisUnit.getTilePosition(), u.getTilePosition());
+					
+					if (groundDistance < range && groundDistance >= 0) {
+					
+						if(closestEnemy == null || hisUnit.getDistance(u) < closestEnemy.getDistance(u)) {
+							closestEnemy = hisUnit;
+						}
 					}
 				}
+
 			}
 		}
 //		if(closestEnemy != null)

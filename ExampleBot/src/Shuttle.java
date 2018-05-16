@@ -15,7 +15,7 @@ public class Shuttle extends MyUnit {
 		hasReaver = false;
 	}
 
-	public void commandShuttle(Position attackPosition) throws Exception {
+	public void commandShuttle(HisBase dropBase) throws Exception {
 		hasReaver = false;
 		target = getTarget(false);
     	double[] moveVector = {0,0};
@@ -23,11 +23,11 @@ public class Shuttle extends MyUnit {
     		if(myUnit.getPlayer() == game.self() && myUnit.isCompleted()) {
     			if(myUnit.getType() == UnitType.Protoss_Reaver
     				&& u.getSpaceRemaining() >= UnitType.Protoss_Reaver.spaceRequired()
-    				&& myUnit.getScarabCount() + myUnit.getTrainingQueue().size() > 0 
-    				&& (target != null || (target == null && myUnit.getScarabCount() + myUnit.getTrainingQueue().size() == 5))
-    				&& !myUnit.isAttackFrame() 
+    				&& myUnit.getScarabCount() + myUnit.getTrainingQueue().size() > 0
+    				&& (target != null || myUnit.getScarabCount() + myUnit.getTrainingQueue().size() == 5)
     				&& (GuiBot.myUnits.containsKey(myUnit.getID()) && GuiBot.myUnits.get(myUnit.getID()).isRequestingEvac())
-    				&& (target == null || myUnit.isUnderAttack())) {
+//    				&& (target == null || myUnit.isUnderAttack())
+    				) {
     				
 //    				u.load(myUnit);
     				myUnit.rightClick(u);
@@ -51,10 +51,17 @@ public class Shuttle extends MyUnit {
 		}
 		
     	double[] threatVector = threatVector();
-    	double[] clusterVector = clusterVector(attackPosition);
+    	double[] dropVector = {0,0};
+    	double[] clusterVector = {0,0};
+		if(hasReaver && dropBase != null) {
+			dropVector = drop(dropBase);
+		} else {
+    		clusterVector = clusterVector();
+    	}
     	double[] terrainVector = terrainVector();
     	double[] targetVector = targetVector();
     	moveVector = addVector(moveVector, threatVector);
+    	moveVector = addVector(moveVector, dropVector);
     	moveVector = addVector(moveVector, clusterVector);
      	moveVector = addVector(moveVector, terrainVector);
      	moveVector = addVector(moveVector, targetVector);
@@ -63,16 +70,19 @@ public class Shuttle extends MyUnit {
 		moveVector = adjustForWalls(moveVector, u);
 		
 		//drop units
-		if(u.canUnload() && threatVector[0]*targetVector[0] + threatVector[1]*targetVector[1] <= 0) {
+		if(u.canUnload() && moveVector[0]*threatVector[0] + moveVector[1]*threatVector[1] <= 0) {
 			if(!gotCommand) {
 				double groundDistance = 0;
 				for(Unit myUnit: u.getLoadedUnits()) {
 					if(myUnit.getType() == UnitType.Protoss_Reaver) {
 						hasReaver = true;
 						if(target != null) {
-							groundDistance = BWTA.getGroundDistance(u.getTilePosition(), target.getTilePosition());
+							if(BWTA.getRegion(u.getPosition()) == BWTA.getRegion(myUnit.getPosition()))
+								groundDistance = u.getPosition().getDistance(myUnit.getPosition());
+							else
+								groundDistance = BWTA.getGroundDistance(u.getTilePosition(), target.getTilePosition());
 							if((target.hasPath(u.getPosition())
-								&& groundDistance <= 8*32 && groundDistance >= 0)
+								&& groundDistance <= 8*32+16 && groundDistance >= 0)
 								|| (target == null && myUnit.getScarabCount() + myUnit.getTrainingQueue().size() == 0)) {
 								
 								u.unload(myUnit);
@@ -84,8 +94,8 @@ public class Shuttle extends MyUnit {
 				}
 			}
  		}
-		game.drawLineMap(u.getX(), u.getY(), u.getX()+(int)threatVector[0], u.getY()+(int)threatVector[1], Color.Red);
-		game.drawLineMap(u.getX(), u.getY(), u.getX()+(int)moveVector[0], u.getY()+(int)moveVector[1], Color.Green);
+//		game.drawLineMap(u.getX(), u.getY(), u.getX()+(int)threatVector[0], u.getY()+(int)threatVector[1], Color.Red);
+//		game.drawLineMap(u.getX(), u.getY(), u.getX()+(int)moveVector[0], u.getY()+(int)moveVector[1], Color.Green);
 
 		move(new Position(u.getX()+(int)moveVector[0], u.getY()+(int)moveVector[1]));
 	}
@@ -123,13 +133,17 @@ public class Shuttle extends MyUnit {
 				
 				if (!hisUnit.getType().airWeapon().equals(WeaponType.None)) {
 					hisRange = game.enemy().weaponMaxRange(hisUnit.getType().airWeapon()) + hisSize + mySize;
-    				threatVector[0] += -2*scale*hisRange/d/d*(hisUnit.getX()-u.getX());
-					threatVector[1] += -2*scale*hisRange/d/d*(hisUnit.getY()-u.getY());
+    				threatVector[0] += -3*scale*hisRange/d/d*(hisUnit.getX()-u.getX());
+					threatVector[1] += -3*scale*hisRange/d/d*(hisUnit.getY()-u.getY());
 				} else if(u.getLoadedUnits().size() > 0 
-					&& !hisUnit.getType().groundWeapon().equals(WeaponType.None) && !hisUnit.getType().isWorker()) {		    				
-					hisRange = game.enemy().weaponMaxRange(hisUnit.getType().groundWeapon()) + hisSize + mySize;
-    				threatVector[0] += -2*scale*hisRange/d/d*(hisUnit.getX()-u.getX());
-					threatVector[1] += -2*scale*hisRange/d/d*(hisUnit.getY()-u.getY());
+					&& (!hisUnit.getType().groundWeapon().equals(WeaponType.None) && !hisUnit.getType().isWorker())
+					|| hisUnit.getType() == UnitType.Terran_Bunker) {		    
+					if(hisUnit.getType() == UnitType.Terran_Bunker)
+						hisRange = game.enemy().weaponMaxRange(WeaponType.Gauss_Rifle) + 16 + hisSize + mySize;
+					else
+						hisRange = game.enemy().weaponMaxRange(hisUnit.getType().groundWeapon()) + hisSize + mySize;
+    				threatVector[0] += -3*scale*hisRange/d/d*(hisUnit.getX()-u.getX());
+					threatVector[1] += -3*scale*hisRange/d/d*(hisUnit.getY()-u.getY());
 				}
 			}
 		}	
@@ -137,11 +151,21 @@ public class Shuttle extends MyUnit {
 		return threatVector;
 	}
 	
-	public double[] clusterVector(Position attackPosition) {
+	public double[] drop(HisBase dropBase) {
+		double d;
+		double[] dropVector = {0,0};
+		d = dropBase.getPosition().getApproxDistance(u.getPosition());
+		dropVector[0] = 1*scale/d*(dropBase.getPosition().getX()-u.getX());
+		dropVector[1] = 1*scale/d*(dropBase.getPosition().getY()-u.getY());
+
+		return dropVector;
+	}
+	
+	public double[] clusterVector() {
 		double d;
      	double[] clusterVector = {0,0};
-     	
-     	if(!hasReaver) {
+     	boolean pickUpReaver = false;
+     	if(!hasReaver && game.self().allUnitCount(UnitType.Protoss_Reaver) > 0) {
 			for(Unit otherUnit: game.self().getUnits()) {
 				if(otherUnit.getType() == UnitType.Protoss_Reaver && !otherUnit.isLoaded()
 					&& (otherUnit.isCompleted() || otherUnit.getRemainingBuildTime()*game.self().topSpeed(u.getType()) 
@@ -152,9 +176,11 @@ public class Shuttle extends MyUnit {
 					clusterVector[1] += 4*scale/d*(otherUnit.getY()-u.getY());
 					clusterVector[0] += 3*scale*scale/d/d*(otherUnit.getX()-u.getX());
 					clusterVector[1] += 3*scale*scale/d/d*(otherUnit.getY()-u.getY());
+					pickUpReaver = true;
 				}
 			}
-     	} else {
+     	} 
+     	if(!pickUpReaver) {
 			for(Unit otherUnit: game.self().getUnits()) {
 				if(otherUnit.isCompleted() && !otherUnit.isLoaded()) {
 					if(otherUnit.getType() == UnitType.Protoss_Dragoon) {
@@ -188,15 +214,9 @@ public class Shuttle extends MyUnit {
      	}
 		//go back home if nothing to do
 		if(clusterVector[0] == 0 && clusterVector[1] == 0) {
-			if(hasReaver && attackPosition != null) {
-				d = attackPosition.getApproxDistance(u.getPosition());
-				clusterVector[0] += 1*scale/d*(attackPosition.getX()-u.getX());
-				clusterVector[1] += 1*scale/d*(attackPosition.getY()-u.getY());
-			} else {
-				d = u.getPosition().getApproxDistance(game.self().getStartLocation().toPosition());
-				clusterVector[0] += 1*scale/d*(game.self().getStartLocation().toPosition().getX()-u.getX());
-				clusterVector[1] += 1*scale/d*(game.self().getStartLocation().toPosition().getY()-u.getY());
-			}
+			d = u.getPosition().getApproxDistance(game.self().getStartLocation().toPosition());
+			clusterVector[0] = 2*scale/d*(game.self().getStartLocation().toPosition().getX()-u.getX());
+			clusterVector[1] = 2*scale/d*(game.self().getStartLocation().toPosition().getY()-u.getY());
 		}
 		return clusterVector;
 	}
@@ -214,7 +234,7 @@ public class Shuttle extends MyUnit {
 					&& (!hisUnit.getType().isBuilding() || hisUnit.getType().canAttack() || hisUnit.getType() == UnitType.Terran_Bunker)) {
 					
 					d = u.getPosition().getApproxDistance(hisUnit.getPosition());
-					targetScore = 2*scale*8*32/d;
+					targetScore = 2*scale*8*32/Math.max(6*32, d);
 					if(targetScore > bestTargetScore) {
 						targetVector[0] = targetScore/d*(hisUnit.getX()-u.getX());
 						targetVector[1] = targetScore/d*(hisUnit.getY()-u.getY());
