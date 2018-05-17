@@ -49,6 +49,10 @@ public class GuiBot extends DefaultBWListener {
     private HashMap<Region, MyBase> bases;
     private HashMap<Region, HisBase> enemyBases;
     private int gasBases;
+    private int armySupplyKilled;
+    private int enemyArmySupplyKilled;
+    private int armySupply;
+    private int enemyArmySupply;
     
     private Chokepoint defenseChoke;
     private Chokepoint mainChoke;
@@ -114,6 +118,7 @@ public class GuiBot extends DefaultBWListener {
 			    	} else if(unit.getType() != UnitType.Zerg_Larva && unit.getType() != UnitType.Zerg_Egg 
 			    		&& unit.getType() != UnitType.Protoss_Scarab){
 			    		enemyArmy.put(unit.getID(), new HisUnit(unit, game));
+			    		
 			    	}
 	    		}
 		    	//change race away from random
@@ -152,11 +157,15 @@ public class GuiBot extends DefaultBWListener {
 	        			unitLostTab.put(unit.getType(), 1);
 	        		else
 	        			unitLostTab.put(unit.getType(), unitLostTab.get(unit.getType())+1);
+	        		
+	        		enemyArmySupplyKilled += unit.getType().supplyRequired();
 	        	} else if(unit.getPlayer() == game.enemy()) {
 	        		if(!enemiesKilledTab.containsKey(unit.getType()))
 	        			enemiesKilledTab.put(unit.getType(), 1);
 	        		else
 	        			enemiesKilledTab.put(unit.getType(), enemiesKilledTab.get(unit.getType())+1);
+	        		
+	        		armySupplyKilled += unit.getType().supplyRequired();
 	        	}
         	}
         	
@@ -372,6 +381,10 @@ public class GuiBot extends DefaultBWListener {
         bases = new HashMap<Region, MyBase>();
         enemyBases = new HashMap<Region, HisBase>();
         gasBases = 1;
+        armySupplyKilled = 0;
+        enemyArmySupplyKilled = 0;
+        armySupply = 0;
+        enemyArmySupply = 0;
         for(Unit u: self.getUnits()) {
         	if(u.getType() == UnitType.Protoss_Probe) {
         		Probe p = new Probe(u, game);
@@ -803,6 +816,7 @@ public class GuiBot extends DefaultBWListener {
         }
         
         gasBases = 0;
+        armySupply = 0;
         //iterate through my units
         for (Unit myUnit : self.getUnits()) {   
         	//cancel a dying building
@@ -859,6 +873,7 @@ public class GuiBot extends DefaultBWListener {
             		i++;
             	}
             } else {
+            	armySupply += myUnit.getType().supplyRequired();
 //            	if(myUnit.getTarget() ==null) {
 //            		game.drawTextMap(myUnit.getPosition(), ""+Math.sqrt(Math.pow(myUnit.getVelocityX(),2) + Math.pow(myUnit.getVelocityY(),2)));
 //            	}
@@ -933,12 +948,6 @@ public class GuiBot extends DefaultBWListener {
         		//in case someone does extractor trick or refinery is killed
         		if(hisUnit.isVisible() && hisUnit.getType() == UnitType.Resource_Vespene_Geyser)
         			enemyBuildings.remove(hisUnit.getID());
-        	}
-        	if(enemyArmy.containsKey(hisUnit.getID())) {
-        		if(hisUnit.isVisible() && hisUnit.getType().isBuilding())
-        			enemyArmy.remove(hisUnit.getID());
-    			else
-    				enemyArmy.get(hisUnit.getID()).update();
         	}
         	if(hisUnit.isVisible()) {
 	        	//for some reason, the game remembers enemy positions from past games, so gotta check if explored
@@ -1066,7 +1075,16 @@ public class GuiBot extends DefaultBWListener {
     		}
         }
         
+        Iterator<Integer> itr2 = enemyArmy.keySet().iterator();
+        while(itr2.hasNext()) {
+        	u = enemyArmy.get(itr2.next());
+    		if(u.getType() != null && u.getUnit().isVisible() && u.getType().isBuilding())
+    			itr2.remove();
+			else
+				u.update();
+        }
         enemyArmyTab.clear();
+        enemyArmySupply = 0;
         for(int i: enemyArmy.keySet()) {
         	u = enemyArmy.get(i);
         	//count all units
@@ -1074,6 +1092,9 @@ public class GuiBot extends DefaultBWListener {
     			enemyArmyTab.put(u.getType(), enemyArmyTab.get(u.getType())+1);
     		else
     			enemyArmyTab.put(u.getType(), 1);
+    		
+    		if(u.getType() != null && !u.getType().isWorker())
+    			enemyArmySupply += u.getType().supplyRequired();
         }
 
         //left panel debug messages
@@ -1088,9 +1109,10 @@ public class GuiBot extends DefaultBWListener {
 //			enemyInfo += t +": " + enemyArmyTab.get(t) + "\n";
 //        for(UnitType t: unitLostTab.keySet()) 
 //			enemyInfo += t +": " + unitLostTab.get(t) + "\n";
-        for(UnitType t: enemiesKilledTab.keySet()) 
-			enemyInfo += t +": " + enemiesKilledTab.get(t) + "\n";
-        
+//        for(UnitType t: enemiesKilledTab.keySet()) 
+//			enemyInfo += t +": " + enemiesKilledTab.get(t) + "\n";
+        enemyInfo += armySupply+ " " + enemyArmySupply + "\n";
+        enemyInfo += armySupplyKilled+ " " + enemyArmySupplyKilled + "\n";
         game.drawTextScreen(10, 30, enemyInfo);
         
         if(attackPosition == null) {
@@ -2330,14 +2352,16 @@ public class GuiBot extends DefaultBWListener {
     		squad = squadItr.next();
     		if(squad.getUnits().size() > 0) {
     			center = squad.findCenter();
-		    	if(squad.getUnits().size() >= 12 || squad.getCommand() == UnitState.ATTACKING
-		    		|| self.supplyUsed() >= 380 || aBaseIsUnderAttack
+		    	if(aBaseIsUnderAttack || (armySupply > enemyArmySupply &&
+		    		(squad.getUnits().size() >= 12 || squad.getCommand() == UnitState.ATTACKING
+		    		|| self.supplyUsed() >= 380 
 	//	    		|| (center.getApproxDistance(squad.getObjective()) < 10*32 && squad.getUnitCount(UnitType.Protoss_Zealot) == 0)
-		    		|| squad.seesRangedEnemies()
+		    		|| squad.seesRangedEnemies() && center.getApproxDistance(defenseChoke.getCenter()) < 10*32
 		    		|| (enemyRace == Race.Terran && self.getUpgradeLevel(UpgradeType.Singularity_Charge) > 0 
 		    			&& !enemyBuildingTab.containsKey(UnitType.Terran_Siege_Tank_Siege_Mode)
+		    			&& game.enemy().getUpgradeLevel(UpgradeType.Ion_Thrusters) == 0))
 		    		|| (enemyRace == Race.Protoss && self.allUnitCount(UnitType.Protoss_Nexus) > 1)
-		    		&& game.enemy().getUpgradeLevel(UpgradeType.Ion_Thrusters) == 0)) {
+		    		)) {
 		    		//recruit nearby idle units
 		    		Iterator<MyUnit> itr = freeAgents.getUnits().iterator();
 		    		MyUnit freeUnit;

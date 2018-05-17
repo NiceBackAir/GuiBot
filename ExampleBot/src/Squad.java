@@ -130,7 +130,7 @@ public class Squad {
 				}
 			}
 		} else {
-			if(isTogether() && objective.getApproxDistance(center) < 15*32) {
+			if(isTogether() && objective.getApproxDistance(center) < 17*32) {
 				contain(objective, range);
 			} else {
 				groupUp();
@@ -296,11 +296,11 @@ public class Squad {
 	}
 	public boolean isStaged(Position pos, int range) {		
 		Position center = findCenter();
-		if(center != null && center.getApproxDistance(pos) <  range-16+16*Math.ceil(units.size()/12))
+		if(center != null && center.getApproxDistance(pos) <  range+32)
 			return true;
 
 		for(MyUnit u: units) {
-			if(u.getUnit().getPosition().getApproxDistance(pos) >= range + 3*Math.ceil(units.size()/12)*32) {
+			if(u.getUnit().getPosition().getApproxDistance(pos) >= range + 5*32) {
 				return false;
 			}
 		}		
