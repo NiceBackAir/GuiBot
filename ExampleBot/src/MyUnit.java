@@ -346,12 +346,12 @@ public class MyUnit extends PositionedObject {
 		Unit closestEnemy = null;
 		int range = Math.max(u.getType().seekRange(), game.self().weaponMaxRange(u.getType().groundWeapon()));
 		if(range == 0 || !u.getType().canAttack()) {
-			range = u.getType().sightRange() + 32;
+			range = u.getType().sightRange();
 		}
 //		System.out.println(range);
 		for(Unit hisUnit: u.getUnitsInRadius(range)) {// u.getUnitsInWeaponRange(u.getType().groundWeapon())) {
 			if(hisUnit.getPlayer() == game.enemy()) {
-				if(hisUnit.isDetected() && !hisUnit.isInvincible() //u.isInWeaponRange(hisUnit) && 
+				if(!hisUnit.isInvincible() //u.isInWeaponRange(hisUnit) && hisUnit.isDetected() && 
 					&& (hisUnit.isCompleted() || hisUnit.getType().isBuilding() || hisUnit.getType() == UnitType.Zerg_Lurker_Egg)
 					&& (attackBuildings || !hisUnit.getType().isBuilding() || hisUnit.getType().canAttack()
 					|| hisUnit.getType() == UnitType.Terran_Bunker)		
@@ -460,8 +460,8 @@ public class MyUnit extends PositionedObject {
 			return false;
 		if(!u.isAttackFrame() && u.getGroundWeaponCooldown() > 0)
 			return true;
-		if(u.getLastCommand().getTarget() != null && u.getLastCommand().getTarget().equals(hisUnit)
-			&& hisUnit.isDetected() && hisUnit.getType() != UnitType.Resource_Vespene_Geyser 
+		if(u.getLastCommand().getTarget() != null && u.getLastCommand().getTarget().equals(hisUnit) //&& hisUnit.isDetected()
+			&& hisUnit.getType() != UnitType.Resource_Vespene_Geyser 
 			&& hisUnit.exists() && (u.isInWeaponRange(hisUnit) || u.getDistance(hisUnit) <= u.getType().seekRange())) {
 			
 			return false;

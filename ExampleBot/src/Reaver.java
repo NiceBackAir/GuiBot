@@ -1,3 +1,4 @@
+import bwapi.Color;
 import bwapi.Game;
 import bwapi.Position;
 import bwapi.Unit;
@@ -17,6 +18,7 @@ public class Reaver extends MyUnit {
 	public void attack(Position pos, boolean attackBuildings) throws Exception {
 		target = getTarget(attackBuildings);
 		if(target != null && target.exists()) {
+//			game.drawLineMap(u.getPosition(), target.getPosition(), Color.Red);
 			if(isFree(target)) {
 				if((u.getGroundWeaponCooldown() == 0 || u.isAttackFrame()) && u.getScarabCount() > 0) {
 					if(!(u.getLastCommand().getUnitCommandType() == UnitCommandType.Attack_Unit
@@ -58,22 +60,22 @@ public class Reaver extends MyUnit {
 	
 	public Unit getTarget(boolean attackBuildings) throws Exception {
 		Unit closestEnemy = null;
-		int range = 8*32+16;
+		int range = 8*32 + 16;
 //		System.out.println(range);
 		double groundDistance = 0;
 		for(Unit hisUnit: u.getUnitsInRadius(range)) {// u.getUnitsInWeaponRange(u.getType().groundWeapon())) {
 			if(hisUnit.getPlayer() == game.enemy()) {
-				if(hisUnit.isDetected() && !hisUnit.isInvincible() && !hisUnit.isFlying() //u.isInWeaponRange(hisUnit) && 
+				if(!hisUnit.isInvincible() && !hisUnit.isFlying() //u.isInWeaponRange(hisUnit) && hisUnit.isDetected() && 
 					&& (hisUnit.isCompleted() || hisUnit.getType().isBuilding() || hisUnit.getType() == UnitType.Zerg_Lurker_Egg)
 					&& (attackBuildings || !hisUnit.getType().isBuilding() || hisUnit.getType().canAttack()
 					|| hisUnit.getType() == UnitType.Terran_Bunker)					
-					&& hisUnit.getType() != UnitType.Zerg_Egg && hisUnit.getType() != UnitType.Zerg_Larva
-					&& hisUnit.hasPath(u)) {
+					&& hisUnit.getType() != UnitType.Zerg_Egg && hisUnit.getType() != UnitType.Zerg_Larva) {
+//					&& hisUnit.hasPath(u)
 					
 					if(BWTA.getRegion(u.getPosition()) == BWTA.getRegion(u.getPosition()))
 						groundDistance = hisUnit.getPosition().getDistance(u.getPosition());
 					else
-						groundDistance = BWTA.getGroundDistance(hisUnit.getTilePosition(), u.getTilePosition());
+						groundDistance = BWTA.getGroundDistance(hisUnit.getTilePosition(), u.getTilePosition()) - 32;
 					
 					if (groundDistance < range && groundDistance >= 0) {
 					

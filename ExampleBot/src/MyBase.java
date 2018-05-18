@@ -18,6 +18,7 @@ public class MyBase {
 	private boolean isAMain;
 	private BaseLocation base;
 	private boolean isUnderAttack;
+	private boolean isCompleted;
 	
 	public MyBase(Game game, Unit unit) {
 		this.game = game;
@@ -25,6 +26,7 @@ public class MyBase {
 		workers = new Squad(game);
 		resources = new HashMap<Unit, Integer>();
 		buildings = new ArrayList<Unit>();
+		buildings.add(unit);
 		base = BWTA.getNearestBaseLocation(unit.getPosition());
 		isUnderAttack = false;
 		workers.resumeMining();
@@ -106,5 +108,14 @@ public class MyBase {
 	
 	public void setUnderAttack(boolean attacked) {
 		isUnderAttack = attacked;
+	}
+	
+	public boolean isCompleted() {
+		for(Unit u: buildings) {
+			if(u.getType() == UnitType.Protoss_Nexus && u.isCompleted()) {
+				return true;
+			}
+		}		
+		return false;
 	}
 }

@@ -40985,3 +40985,53 @@ vs Shelak Tribe (Protoss) on(3)Neo Moon Glaive.scx
 vs Auriga Tribe (Protoss) on(3)Neo Moon Glaive.scx
 vs Velari Tribe (Protoss) on(2)Benzene.scx
 vs Velari Tribe (Protoss) on(2)Benzene.scx
+vs Baelrog Brood (Zerg) on(4)Circuit Breaker.scx
+172
+vs Surtur Brood (Zerg) on(4)Circuit Breaker.scx
+168
+vs Grendel Brood (Zerg) on(4)Circuit Breaker.scx
+vs Sargas Tribe (Protoss) on(4)Circuit Breaker.scx
+156
+vs Leviathan Brood (Zerg) on(4)Circuit Breaker.scx
+154
+vs Auriga Tribe (Protoss) on(4)Circuit Breaker.scx
+152
+vs Kel-Morian Combine (Terran) on(4)Circuit Breaker.scx
+vs Kel-Morian Combine (Terran) on(4)Circuit Breaker.scx
+152
+vs Atlas Wing (Terran) on(4)Circuit Breaker.scx
+155
+vs Tiamat Brood (Zerg) on(4)Circuit Breaker.scx
+155
+vs Sargas Tribe (Protoss) on(4)Circuit Breaker.scx
+150
+vs Auriga Tribe (Protoss) on(4)Circuit Breaker.scx
+154
+vs Velari Tribe (Protoss) on(4)Circuit Breaker.scx
+vs Shelak Tribe (Protoss) on(4)Circuit Breaker.scx
+153
+vs Akilae Tribe (Protoss) on(4)Circuit Breaker.scx
+151
+vs Furinax Tribe (Protoss) on(4)Circuit Breaker.scx
+156
+vs Furinax Tribe (Protoss) on(4)Circuit Breaker.scx
+vs Shelak Tribe (Protoss) on(4)Circuit Breaker.scx
+vs Venatir Tribe (Protoss) on(4)Circuit Breaker.scx
+vs Ara Tribe (Protoss) on(4)Circuit Breaker.scx
+vs Akilae Tribe (Protoss) on(4)Circuit Breaker.scx
+vs Jormungand Brood (Zerg) on(4)Circuit Breaker.scx
+vs Surtur Brood (Zerg) on(4)Circuit Breaker.scx
+vs Fenris Brood (Zerg) on(4)Circuit Breaker.scx
+157
+vs Garm Brood (Zerg) on(4)Circuit Breaker.scx
+153
+vs Jormungand Brood (Zerg) on(4)Circuit Breaker.scx
+158
+vs Surtur Brood (Zerg) on(4)Circuit Breaker.scx
+160
+vs Grendel Brood (Zerg) on(4)Circuit Breaker.scx
+153
+vs Jormungand Brood (Zerg) on(4)Circuit Breaker.scx
+155
+vs Tiamat Brood (Zerg) on(4)Circuit Breaker.scx
+154

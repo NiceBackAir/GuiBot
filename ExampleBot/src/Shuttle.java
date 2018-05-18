@@ -17,14 +17,13 @@ public class Shuttle extends MyUnit {
 
 	public void commandShuttle(HisBase dropBase) throws Exception {
 		hasReaver = false;
-		target = getTarget(false);
+		//target = getTarget(false);
     	double[] moveVector = {0,0};
     	for(Unit myUnit: u.getUnitsInRadius(32)) {
     		if(myUnit.getPlayer() == game.self() && myUnit.isCompleted()) {
     			if(myUnit.getType() == UnitType.Protoss_Reaver
     				&& u.getSpaceRemaining() >= UnitType.Protoss_Reaver.spaceRequired()
-    				&& myUnit.getScarabCount() + myUnit.getTrainingQueue().size() > 0
-    				&& (target != null || myUnit.getScarabCount() + myUnit.getTrainingQueue().size() == 5)
+    				&& (myUnit.getScarabCount() + myUnit.getTrainingQueue().size() == 5 || game.self().minerals() < 15)
     				&& (GuiBot.myUnits.containsKey(myUnit.getID()) && GuiBot.myUnits.get(myUnit.getID()).isRequestingEvac())
 //    				&& (target == null || myUnit.isUnderAttack())
     				) {
@@ -72,24 +71,16 @@ public class Shuttle extends MyUnit {
 		//drop units
 		if(u.canUnload() && moveVector[0]*threatVector[0] + moveVector[1]*threatVector[1] <= 0) {
 			if(!gotCommand) {
-				double groundDistance = 0;
 				for(Unit myUnit: u.getLoadedUnits()) {
-					if(myUnit.getType() == UnitType.Protoss_Reaver) {
-						hasReaver = true;
-						if(target != null) {
-							if(BWTA.getRegion(u.getPosition()) == BWTA.getRegion(myUnit.getPosition()))
-								groundDistance = u.getPosition().getDistance(myUnit.getPosition());
-							else
-								groundDistance = BWTA.getGroundDistance(u.getTilePosition(), target.getTilePosition());
-							if((target.hasPath(u.getPosition())
-								&& groundDistance <= 8*32+16 && groundDistance >= 0)
-								|| (target == null && myUnit.getScarabCount() + myUnit.getTrainingQueue().size() == 0)) {
-								
+					if(GuiBot.myUnits.containsKey(myUnit.getID())) {
+						MyUnit unit = GuiBot.myUnits.get(myUnit.getID());
+						if(myUnit.getType() == UnitType.Protoss_Reaver) {
+							hasReaver = true;
+							if(unit.getTarget(false) != null) 
 								u.unload(myUnit);
-							}
+						} else if(unit.getTarget(false) == null) {
+							u.unload(myUnit);
 						}
-					} else {
-						u.unload(myUnit);
 					}
 				}
 			}
