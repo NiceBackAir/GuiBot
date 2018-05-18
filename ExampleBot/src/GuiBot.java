@@ -1888,8 +1888,9 @@ public class GuiBot extends DefaultBWListener {
 	    					threatVector[1] += -0.6*scale*hisRange/d/d*(hisUnit.getY()-myUnit.getY());
 	    				}
 	    			} else if(myUnit.getType() == UnitType.Protoss_Observer
-	    				&& (!hisUnit.getType().airWeapon().equals(WeaponType.None) || hisUnit.getType().isDetector())) {		    				
-	    				  
+	    				&& (!hisUnit.getType().airWeapon().equals(WeaponType.None) || hisUnit.getType().isDetector() 
+	    				|| hisUnit.getType().equals(UnitType.Terran_Bunker))) {	  
+
 	    				if(hisUnit.getType().isDetector()) {
 	    					hisRange = hisUnit.getType().sightRange() + hisSize + mySize;
 		    				threatVector[0] += -2*scale*hisRange/d/d*(hisUnit.getX()-myUnit.getX());
@@ -1897,13 +1898,20 @@ public class GuiBot extends DefaultBWListener {
 	    				} else {
 	    					if(myUnit.isDetected())
 	    						detectFactor = 2;
-	    					hisRange = game.enemy().weaponMaxRange(hisUnit.getType().airWeapon()) + hisSize + mySize;	  
+							if(hisUnit.getType() == UnitType.Terran_Bunker)
+								hisRange = game.enemy().weaponMaxRange(WeaponType.Gauss_Rifle) + 16 + hisSize + mySize;
+							else
+								hisRange = game.enemy().weaponMaxRange(hisUnit.getType().airWeapon()) + hisSize + mySize;  
 	    					threatVector[0] += -1*detectFactor*scale*hisRange/d/d*(hisUnit.getX()-myUnit.getX());
 	    					threatVector[1] += -1*detectFactor*scale*hisRange/d/d*(hisUnit.getY()-myUnit.getY());
 	    				}
 	    			} else if (myUnit.getType() == UnitType.Protoss_Probe && (!hisUnit.getType().groundWeapon().equals(WeaponType.None)
 	    				|| hisUnit.getType() == UnitType.Terran_Bunker) && (!hisUnit.getType().isWorker() || hisUnit.isAttacking())) {
-	    				hisRange = game.enemy().weaponMaxRange(hisUnit.getType().groundWeapon()) + hisSize + mySize;	 
+	    				
+						if(hisUnit.getType() == UnitType.Terran_Bunker)
+							hisRange = game.enemy().weaponMaxRange(WeaponType.Gauss_Rifle) + 16 + hisSize + mySize;
+						else
+							hisRange = game.enemy().weaponMaxRange(hisUnit.getType().airWeapon()) + hisSize + mySize;  	 
 	    				threatVector[0] += -2*scale*hisRange/d/d*(hisUnit.getX()-myUnit.getX());
     					threatVector[1] += -2*scale*hisRange/d/d*(hisUnit.getY()-myUnit.getY());
 	    			}
