@@ -1920,7 +1920,7 @@ public class GuiBot extends DefaultBWListener {
 	    				myRange = self.weaponMaxRange(myUnit.getType().airWeapon());
 	    				targetScore = 1.25*scale*myRange/d;
 	    				if(hisUnit.getType().airWeapon() != WeaponType.None)
-	    					targetScore *= 1.5;
+	    					targetScore *= 1.3;
 	    				if(targetScore > bestTargetScore) {
 	    					targetVector[0] = targetScore/d*(hisUnit.getX()-myUnit.getX());
 	    					targetVector[1] = targetScore/d*(hisUnit.getY()-myUnit.getY());

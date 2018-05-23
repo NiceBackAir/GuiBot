@@ -83,6 +83,13 @@ public class MyUnit extends PositionedObject {
 	public void scout() {
 	}
 	
+	public void kiteBack(Position pos) throws Exception {
+		if(u.getGroundWeaponCooldown() == 0)
+			attack(pos, false);
+		else
+			move(pos);
+	}
+	
 	public void attack(Position pos, boolean attackBuildings) throws Exception {
 		target = getTarget(attackBuildings);
 //		if(u.isStuck())
@@ -332,8 +339,8 @@ public class MyUnit extends PositionedObject {
 						attack(choke.getRegions().first.getCenter(), false);
 					}
 				}
-			} else if(choke.getCenter().getApproxDistance(u.getPosition()) > 10*32 || target == null) {
-				move(choke.getCenter());
+			} else if(choke.getCenter().getApproxDistance(u.getPosition()) > 35*32 || target == null) {
+				kiteBack(choke.getCenter());
 			} else {
 				attack(target.getPosition(), false);
 			}
@@ -356,7 +363,8 @@ public class MyUnit extends PositionedObject {
 					&& (attackBuildings || !hisUnit.getType().isBuilding() || hisUnit.getType().canAttack()
 					|| hisUnit.getType() == UnitType.Terran_Bunker)		
 					&& (!hisUnit.isFlying() || u.getType().airWeapon() != WeaponType.None)
-					&& hisUnit.getType() != UnitType.Zerg_Egg && hisUnit.getType() != UnitType.Zerg_Larva ) {
+					&& hisUnit.getType() != UnitType.Zerg_Egg && hisUnit.getType() != UnitType.Zerg_Larva 
+					&& (!hisUnit.isFlying() || u.getType().airWeapon() != WeaponType.None)) {
 					
 					if(closestEnemy == null || hisUnit.getDistance(u) < closestEnemy.getDistance(u)) {
 						closestEnemy = hisUnit;

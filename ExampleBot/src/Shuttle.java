@@ -225,7 +225,7 @@ public class Shuttle extends MyUnit {
 					&& (!hisUnit.getType().isBuilding() || hisUnit.getType().canAttack() || hisUnit.getType() == UnitType.Terran_Bunker)) {
 					
 					d = u.getPosition().getApproxDistance(hisUnit.getPosition());
-					targetScore = 2*scale*8*32/Math.max(6*32, d);
+					targetScore = 1.5*scale*8*32/Math.max(6*32, d);
 					if(targetScore > bestTargetScore) {
 						targetVector[0] = targetScore/d*(hisUnit.getX()-u.getX());
 						targetVector[1] = targetScore/d*(hisUnit.getY()-u.getY());

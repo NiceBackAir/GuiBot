@@ -17,6 +17,10 @@ public class HighTemplar extends MyUnit {
 		super(u, game);
 		// TODO Auto-generated constructor stub
 	}
+	
+	public void kiteBack(Position pos) throws Exception {
+		attack(pos, false);
+	}
 
 	public void attack(Position pos, boolean attackBuildings) throws Exception {
 		if(!gotCommand) {
