@@ -1427,9 +1427,9 @@ public class GuiBot extends DefaultBWListener {
         	if(self.allUnitCount(UnitType.Protoss_Cybernetics_Core) > 0) 
         		nextBuilding = UnitType.Protoss_Robotics_Facility; 	
     	} else if(enemyArmyTab.containsKey(UnitType.Zerg_Lurker) && self.allUnitCount(UnitType.Protoss_Observatory) == 0
-            	&& self.allUnitCount(UnitType.Protoss_Robotics_Facility) > 0) {
-        		
-            	nextBuilding = UnitType.Protoss_Observatory;
+        	&& self.allUnitCount(UnitType.Protoss_Robotics_Facility) > 0) {
+    		
+        	nextBuilding = UnitType.Protoss_Observatory;
     	} else if(self.allUnitCount(UnitType.Protoss_Robotics_Support_Bay) == 0) { 
     		if(self.allUnitCount(UnitType.Protoss_Robotics_Facility) > 0) 
     			nextBuilding = UnitType.Protoss_Robotics_Support_Bay; 		
@@ -1502,10 +1502,10 @@ public class GuiBot extends DefaultBWListener {
     		nextBuilding = UnitType.Protoss_Nexus;
     	} else if(self.allUnitCount(UnitType.Protoss_Citadel_of_Adun) == 0) {    		
     		nextBuilding = UnitType.Protoss_Citadel_of_Adun;    
-		} else if(self.allUnitCount(UnitType.Protoss_Templar_Archives) == 0) {	        		
-			nextBuilding = UnitType.Protoss_Templar_Archives;    	
     	} else if(gasBases < 3) {
-    		nextBuilding = UnitType.Protoss_Nexus;   	
+    		nextBuilding = UnitType.Protoss_Nexus; 
+		} else if(self.allUnitCount(UnitType.Protoss_Templar_Archives) == 0) {	        		
+			nextBuilding = UnitType.Protoss_Templar_Archives;    	  	
     	} else if(self.allUnitCount(UnitType.Protoss_Forge) == 0) {
     		nextBuilding = UnitType.Protoss_Forge; 
     	} else if(self.allUnitCount(UnitType.Protoss_Gateway) < Math.min(15, (patchCount*3)/8)) {
@@ -1544,16 +1544,14 @@ public class GuiBot extends DefaultBWListener {
     	} else if(self.allUnitCount(UnitType.Protoss_Gateway) <4) {
     		nextBuilding = UnitType.Protoss_Gateway;  
     	} else if(self.allUnitCount(UnitType.Protoss_Nexus) <3) {
-    		nextBuilding = UnitType.Protoss_Nexus;    		
-    	} else if(self.allUnitCount(UnitType.Protoss_Nexus) < 4 && gasBases <2) {
-    		nextBuilding = UnitType.Protoss_Nexus;
+    		nextBuilding = UnitType.Protoss_Nexus;  
     	} else if(self.allUnitCount(UnitType.Protoss_Citadel_of_Adun) == 0 
     		&& self.completedUnitCount(UnitType.Protoss_Cybernetics_Core) > 0) {
     		
     		nextBuilding = UnitType.Protoss_Citadel_of_Adun;   
     	} else if(self.allUnitCount(UnitType.Protoss_Gateway) <7) {
     		nextBuilding = UnitType.Protoss_Gateway;   	
-    	} else if(gasBases < 4) {
+    	} else if(self.allUnitCount(UnitType.Protoss_Nexus) <4) {
     		nextBuilding = UnitType.Protoss_Nexus;  
     	} else if(self.allUnitCount(UnitType.Protoss_Gateway) <10) {
     		nextBuilding = UnitType.Protoss_Gateway;   	

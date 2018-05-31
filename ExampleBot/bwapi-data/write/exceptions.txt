@@ -41035,3 +41035,13 @@ vs Jormungand Brood (Zerg) on(4)Circuit Breaker.scx
 155
 vs Tiamat Brood (Zerg) on(4)Circuit Breaker.scx
 154
+vs Baelrog Brood (Unknown) on(4)Fighting Spirit.scx
+148
+vs Cronus Wing (Terran) on(4)Fighting Spirit.scx
+vs Antiga (Terran) on(4)Fighting Spirit.scx
+vs Fenris Brood (Zerg) on(2)Destination.scx
+161
+vs Velari Tribe (Protoss) on(2)Destination.scx
+154
+vs Sargas Tribe (Protoss) on(2)Destination.scx
+148

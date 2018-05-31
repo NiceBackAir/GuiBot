@@ -35,7 +35,8 @@ public class Shuttle extends MyUnit {
     			} else if(myUnit.getType() == UnitType.Protoss_Dragoon
     				&& u.getSpaceRemaining() >= UnitType.Protoss_Dragoon.spaceRequired() && !myUnit.isAttackFrame() 
     				&& (myUnit.isUnderAttack() && myUnit.getShields() + myUnit.getHitPoints() <= 50)
-    				&& target != null) {
+    				&& (GuiBot.myUnits.containsKey(myUnit.getID()) && GuiBot.myUnits.get(myUnit.getID()).isRequestingEvac())
+    				) {
     				
     				u.rightClick(myUnit);
     				myUnit.rightClick(u);
@@ -116,14 +117,14 @@ public class Shuttle extends MyUnit {
      	double hisSize;
      	double hisRange;
      	double[] threatVector = {0,0};
-		for(Unit hisUnit: u.getUnitsInRadius(u.getType().sightRange())) {
+		for(Unit hisUnit: u.getUnitsInRadius(u.getType().sightRange() + 2*32)) {
 			if(hisUnit.getPlayer().equals(game.enemy())				
 				&& (!hisUnit.getType().isBuilding() || hisUnit.getType().canAttack() || hisUnit.getType() == UnitType.Terran_Bunker)) {
 				d = u.getPosition().getApproxDistance(hisUnit.getPosition());
 				hisSize = Math.sqrt(Math.pow(hisUnit.getType().width(),2) + Math.pow(hisUnit.getType().height(),2))/2;	 
 				
 				if (!hisUnit.getType().airWeapon().equals(WeaponType.None)) {
-					hisRange = game.enemy().weaponMaxRange(hisUnit.getType().airWeapon()) + hisSize + mySize;
+					hisRange = game.enemy().weaponMaxRange(hisUnit.getType().airWeapon()) + 16 + hisSize + mySize;
     				threatVector[0] += -3*scale*hisRange/d/d*(hisUnit.getX()-u.getX());
 					threatVector[1] += -3*scale*hisRange/d/d*(hisUnit.getY()-u.getY());
 				} else if(u.getLoadedUnits().size() > 0 
@@ -133,8 +134,8 @@ public class Shuttle extends MyUnit {
 						hisRange = game.enemy().weaponMaxRange(WeaponType.Gauss_Rifle) + 16 + hisSize + mySize;
 					else
 						hisRange = game.enemy().weaponMaxRange(hisUnit.getType().groundWeapon()) + hisSize + mySize;
-    				threatVector[0] += -3*scale*hisRange/d/d*(hisUnit.getX()-u.getX());
-					threatVector[1] += -3*scale*hisRange/d/d*(hisUnit.getY()-u.getY());
+    				threatVector[0] += -2.5*scale*hisRange/Math.max(4*32,d)/d*(hisUnit.getX()-u.getX());
+					threatVector[1] += -2.5*scale*hisRange/Math.max(4*32,d)/d*(hisUnit.getY()-u.getY());
 				}
 			}
 		}	
@@ -225,7 +226,7 @@ public class Shuttle extends MyUnit {
 					&& (!hisUnit.getType().isBuilding() || hisUnit.getType().canAttack() || hisUnit.getType() == UnitType.Terran_Bunker)) {
 					
 					d = u.getPosition().getApproxDistance(hisUnit.getPosition());
-					targetScore = 1.5*scale*8*32/Math.max(6*32, d);
+					targetScore = 1.8*scale*8*32/Math.max(6*32, d);
 					if(targetScore > bestTargetScore) {
 						targetVector[0] = targetScore/d*(hisUnit.getX()-u.getX());
 						targetVector[1] = targetScore/d*(hisUnit.getY()-u.getY());

@@ -10,12 +10,14 @@ import bwapi.UnitType;
 import bwapi.WeaponType;
 
 public class Dragoon extends MyUnit {
+	private boolean shotsFired;
 
 	public Dragoon(Unit u, Game game) {
 		super(u, game);
 		// TODO Auto-generated constructor stub
 		cancelFrames = 5;
 		scale = 2*32;
+		shotsFired = false;
 	}
 	
 	public void attack(Position pos, boolean attackBuildings) throws Exception {
@@ -30,6 +32,7 @@ public class Dragoon extends MyUnit {
 						
 						u.attack(target);
 						gotCommand = true;
+						shotsFired = true;
 					} else {
 //							game.drawTextMap(u.getPosition(),"charging");
 					}
@@ -46,6 +49,10 @@ public class Dragoon extends MyUnit {
 						//kiting behavior
 						moveAwayFrom(target.getPosition());
 //						game.drawTextMap(u.getPosition(), ""+u.getGroundWeaponCooldown());
+					}
+					
+					if(shotsFired) {
+						isRequestingEvac = true;
 					}
 				}
 //				game.drawTextMap(u.getPosition(),""+u.getLastCommand().getUnitCommandType());
@@ -64,10 +71,21 @@ public class Dragoon extends MyUnit {
 //				u.attack(pos);
 //			}
 //			} else
+			if(u.getGroundWeaponCooldown() == 0 || shotsFired) {
+				isRequestingEvac = true;
+			}
 			move(pos);
 			gotCommand = true;
 		} else {
+			if(shotsFired) {
+				isRequestingEvac = true;
+			}
 			game.drawTextMap(u.getPosition(), "busy atk");
+		}
+		
+		if(u.isLoaded()) {
+			isRequestingEvac = false;
+			shotsFired = false;
 		}
 	}
 

@@ -43,7 +43,9 @@ public class Reaver extends MyUnit {
 			} else {
 			}
 		} else if(isFree()) {
-			isRequestingEvac = true;
+			if(u.getGroundWeaponCooldown() == 0 || shotsFired) {
+				isRequestingEvac = true;
+			}
 			move(pos);
 		} else {
 			if(shotsFired) {
