@@ -902,7 +902,10 @@ public class GuiBot extends DefaultBWListener {
     		if(neutralUnit.getType().isMineralField()) {// || neutralUnit.getType() == UnitType.Resource_Vespene_Geyser) {
     			r = BWTA.getRegion(neutralUnit.getPosition());
     			if(bases.containsKey(r)) {
-    				bases.get(r).putResource(neutralUnit, saturation);
+    				MyBase base = bases.get(r);
+    				//regions can span multiple bases so only pick closeby patches
+    				if(base.getNexus() != null && base.getNexus().getPosition().getApproxDistance(neutralUnit.getPosition()) < 15*32)
+    					base.putResource(neutralUnit, saturation);
     			}
     		}
         }
@@ -1551,12 +1554,14 @@ public class GuiBot extends DefaultBWListener {
     		nextBuilding = UnitType.Protoss_Citadel_of_Adun;   
     	} else if(self.allUnitCount(UnitType.Protoss_Gateway) <7) {
     		nextBuilding = UnitType.Protoss_Gateway;   	
+    	} else if(self.allUnitCount(UnitType.Protoss_Forge) == 0) {
+    		nextBuilding = UnitType.Protoss_Forge; 	
     	} else if(self.allUnitCount(UnitType.Protoss_Nexus) <4) {
     		nextBuilding = UnitType.Protoss_Nexus;  
     	} else if(self.allUnitCount(UnitType.Protoss_Gateway) <10) {
-    		nextBuilding = UnitType.Protoss_Gateway;   	
-    	} else if(self.allUnitCount(UnitType.Protoss_Forge) == 0) {
-    		nextBuilding = UnitType.Protoss_Forge; 		
+    		nextBuilding = UnitType.Protoss_Gateway;  
+    	} else if(self.allUnitCount(UnitType.Protoss_Nexus) <5) {
+    		nextBuilding = UnitType.Protoss_Nexus;   		
     	} else if(self.allUnitCount(UnitType.Protoss_Templar_Archives) == 0
     		&& self.completedUnitCount(UnitType.Protoss_Citadel_of_Adun) > 0) {
     		
@@ -1572,7 +1577,7 @@ public class GuiBot extends DefaultBWListener {
     		
     		nextBuilding = UnitType.Protoss_Arbiter_Tribunal;    		
     	} else if(self.allUnitCount(UnitType.Protoss_Templar_Archives) > 0 
-    		&& self.allUnitCount(UnitType.Protoss_Gateway) < Math.min(15, (patchCount*3)/8)) {
+    		&& self.allUnitCount(UnitType.Protoss_Gateway) < Math.min(16, (patchCount*3)/8)) {
     		nextBuilding = UnitType.Protoss_Gateway;        		
     	} else if(self.allUnitCount(UnitType.Protoss_Arbiter_Tribunal) > 0)  {
     		nextBuilding = UnitType.Protoss_Nexus;    	
@@ -1963,7 +1968,7 @@ public class GuiBot extends DefaultBWListener {
     					d = myUnit.getPosition().getApproxDistance(u.getLastCommand().getTargetPosition());
     					clusterVector[0] += 0.2*scale/d*(u.getLastCommand().getTargetPosition().getX()-myUnit.getX());
     					clusterVector[1] += 0.2*scale/d*(u.getLastCommand().getTargetPosition().getY()-myUnit.getY());
-    					if(d < scale) {
+    					if(d <= scale) {
     						clusterCount++;
     					}
     				}
@@ -1971,10 +1976,11 @@ public class GuiBot extends DefaultBWListener {
     		}
     		
     		double[] retreatVector = {0,0};
-    		if(myUnit.getType() == UnitType.Protoss_Corsair 
+    		if(myUnit.getType() == UnitType.Protoss_Corsair  && self.completedUnitCount(UnitType.Protoss_Corsair) < 6
     			&& (enemyArmyTab.containsKey(UnitType.Zerg_Mutalisk) && enemyArmyTab.get(UnitType.Zerg_Mutalisk) 
-    			> self.allUnitCount(UnitType.Protoss_Corsair) * 3
-    			|| (enemyArmyTab.containsKey(UnitType.Zerg_Scourge) && clusterCount < 6))) {
+    			> self.completedUnitCount(UnitType.Protoss_Corsair) * 3
+    			|| (enemyArmyTab.containsKey(UnitType.Zerg_Scourge) && enemyArmyTab.get(UnitType.Zerg_Scourge) 
+    	    	> self.completedUnitCount(UnitType.Protoss_Corsair) * 2))) {
     			
     			d = myUnit.getPosition().getApproxDistance(self.getStartLocation().toPosition());
     			if(d > 3*32) {

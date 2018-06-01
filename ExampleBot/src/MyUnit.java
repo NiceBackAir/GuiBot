@@ -328,7 +328,7 @@ public class MyUnit extends PositionedObject {
 						if(u.getLastCommand().getUnitCommandType() != UnitCommandType.Stop)
 							u.stop();
 					} else {
-							attack(target.getPosition(), false);
+						attack(target.getPosition(), false);
 					}
 				}
 			} else if(choke.getCenter().getApproxDistance(u.getPosition()) < choke.getWidth()/1.5) {
@@ -339,10 +339,12 @@ public class MyUnit extends PositionedObject {
 						attack(choke.getRegions().first.getCenter(), false);
 					}
 				}
-			} else if(choke.getCenter().getApproxDistance(u.getPosition()) > 35*32 || target == null) {
+			} else if(choke.getCenter().getApproxDistance(u.getPosition()) > 35*32) {
 				kiteBack(choke.getCenter());
-			} else {
+			} else if(target != null) {
 				attack(target.getPosition(), false);
+			} else {
+				attack(choke.getCenter(), false);
 			}
 		} else {
 		}
@@ -350,31 +352,41 @@ public class MyUnit extends PositionedObject {
 	}
 		
 	public Unit getTarget(boolean attackBuildings) throws Exception {
-		Unit closestEnemy = null;
-		int range = Math.max(u.getType().seekRange(), game.self().weaponMaxRange(u.getType().groundWeapon()));
+		Unit bestEnemy = null;
+		int range = Math.max(u.getType().seekRange(), game.self().weaponMaxRange(u.getType().groundWeapon()) + 32);
 		if(range == 0 || !u.getType().canAttack()) {
 			range = u.getType().sightRange();
 		}
-//		System.out.println(range);
+		int bestEnemyHitsToKill = 999;
+		int hitsToKill = 999;
 		for(Unit hisUnit: u.getUnitsInRadius(range)) {// u.getUnitsInWeaponRange(u.getType().groundWeapon())) {
 			if(hisUnit.getPlayer() == game.enemy()) {
-				if(!hisUnit.isInvincible() //u.isInWeaponRange(hisUnit) && hisUnit.isDetected() && 
+				if(!hisUnit.isInvincible() && hisUnit.isDetected()//u.isInWeaponRange(hisUnit)  && 
 					&& (hisUnit.isCompleted() || hisUnit.getType().isBuilding() || hisUnit.getType() == UnitType.Zerg_Lurker_Egg)
 					&& (attackBuildings || !hisUnit.getType().isBuilding() || hisUnit.getType().canAttack()
 					|| hisUnit.getType() == UnitType.Terran_Bunker)		
-					&& (!hisUnit.isFlying() || u.getType().airWeapon() != WeaponType.None)
 					&& hisUnit.getType() != UnitType.Zerg_Egg && hisUnit.getType() != UnitType.Zerg_Larva 
 					&& (!hisUnit.isFlying() || u.getType().airWeapon() != WeaponType.None)) {
+
+					hitsToKill = hisUnit.getHitPoints()/game.getDamageTo(hisUnit.getType(), u.getType(), game.enemy(), game.self()) 
+						+ hisUnit.getShields()/u.getType().groundWeapon().damageAmount();
 					
-					if(closestEnemy == null || hisUnit.getDistance(u) < closestEnemy.getDistance(u)) {
-						closestEnemy = hisUnit;
+					if(bestEnemy == null) {
+						bestEnemy = hisUnit;
+						bestEnemyHitsToKill = hitsToKill;
+					} else if(!u.isInWeaponRange(bestEnemy) && hisUnit.getDistance(u) < bestEnemy.getDistance(u) ) {
+						bestEnemy = hisUnit;
+						bestEnemyHitsToKill = hitsToKill;
+					} else if(u.isInWeaponRange(hisUnit) && !hisUnit.isDefenseMatrixed() && hitsToKill < bestEnemyHitsToKill) {
+						bestEnemy = hisUnit;
+						bestEnemyHitsToKill = hitsToKill;
 					}
 				}
 			}
 		}
 //		if(closestEnemy != null)
 //			game.drawLineMap(u.getPosition(), closestEnemy.getPosition(), Color.White);
-		return closestEnemy;
+		return bestEnemy;
 	}
 	
 	public Position getTargetPosition() throws Exception {

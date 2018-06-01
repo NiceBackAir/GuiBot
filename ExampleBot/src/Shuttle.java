@@ -219,7 +219,7 @@ public class Shuttle extends MyUnit {
 		double bestTargetScore = 0;
 		if(hasReaver) {
 			double d;
-			for(Unit hisUnit: u.getUnitsInRadius(u.getType().sightRange())) {
+			for(Unit hisUnit: u.getUnitsInRadius(10*32)) {
 				if(hisUnit.getPlayer().equals(game.enemy())	
 					&& !hisUnit.isInvincible() && hisUnit.getType() != UnitType.Zerg_Larva && !hisUnit.isFlying()
 					&& hisUnit.getType() != UnitType.Zerg_Egg && hisUnit.getType() != UnitType.Resource_Vespene_Geyser

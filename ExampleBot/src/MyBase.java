@@ -17,6 +17,7 @@ public class MyBase {
 	private Game game;
 	private boolean isAMain;
 	private BaseLocation base;
+	private Unit nexus;
 	private boolean isUnderAttack;
 	private boolean isCompleted;
 	
@@ -27,6 +28,7 @@ public class MyBase {
 		resources = new HashMap<Unit, Integer>();
 		buildings = new ArrayList<Unit>();
 		buildings.add(unit);
+		nexus = unit;
 		base = BWTA.getNearestBaseLocation(unit.getPosition());
 		isUnderAttack = false;
 		workers.resumeMining();
@@ -47,7 +49,6 @@ public class MyBase {
 	
 	public void add(MyUnit u) {
 		UnitType type = u.getUnit().getType();
-		
 		if(type == UnitType.Protoss_Probe) 
 			workers.add(u);
 		else 
@@ -64,6 +65,10 @@ public class MyBase {
 				count ++;
 		}
 		return count;
+	}
+	
+	public Unit getNexus() {
+		return nexus;
 	}
 	
 	public Squad getWorkers() {
