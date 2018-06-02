@@ -92,14 +92,16 @@ public class Squad {
 		center = findCenter();
 //		System.out.println(objective + " " + center);
 		boolean attackBuildings = false;
+		boolean canAttackAir = canAttackAir();
 		for(Unit hisUnit: game.getUnitsInRadius(center, 8*32)) {
 			if(hisUnit.getPlayer() == game.enemy() && hisUnit.isDetected() && !hisUnit.isInvincible()
 				&& hisUnit.getType() != UnitType.Resource_Vespene_Geyser 
 				&& (hisUnit.isCompleted() || hisUnit.getType().isBuilding()|| hisUnit.getType() == UnitType.Zerg_Lurker_Egg)			
-				&& hisUnit.getType() != UnitType.Zerg_Egg && hisUnit.getType() != UnitType.Zerg_Larva ) {
+				&& hisUnit.getType() != UnitType.Zerg_Egg && hisUnit.getType() != UnitType.Zerg_Larva) {
 				
 				attackBuildings = true;
-				if (!hisUnit.getType().isBuilding() || hisUnit.getType().canAttack() || hisUnit.getType() == UnitType.Terran_Bunker) {
+				if ((!hisUnit.getType().isBuilding() || hisUnit.getType().canAttack() || hisUnit.getType() == UnitType.Terran_Bunker)
+					&& (!hisUnit.isFlying() || canAttackAir)) {
 					attackBuildings = false;
 					break;
 				}
@@ -130,11 +132,11 @@ public class Squad {
 				}
 			}
 		} else {
-			if(isTogether() && objective.getApproxDistance(center) < 17*32) {
+//			if(isTogether() && objective.getApproxDistance(center) < 17*32) {
 				contain(objective, range);
-			} else {
-				groupUp();
-			}			
+//			} else {
+//				groupUp();
+//			}			
 		}
 //		game.drawCircleMap(objective,range, Color.Red);
 //		game.drawLineMap(objective, center, Color.Green);

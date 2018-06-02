@@ -374,12 +374,18 @@ public class MyUnit extends PositionedObject {
 					if(bestEnemy == null) {
 						bestEnemy = hisUnit;
 						bestEnemyHitsToKill = hitsToKill;
-					} else if(!u.isInWeaponRange(bestEnemy) && hisUnit.getDistance(u) < bestEnemy.getDistance(u) ) {
-						bestEnemy = hisUnit;
-						bestEnemyHitsToKill = hitsToKill;
-					} else if(u.isInWeaponRange(hisUnit) && !hisUnit.isDefenseMatrixed() && hitsToKill < bestEnemyHitsToKill) {
-						bestEnemy = hisUnit;
-						bestEnemyHitsToKill = hitsToKill;
+					} else if(!hisUnit.isDefenseMatrixed()) {
+						if(!u.isInWeaponRange(bestEnemy)) {
+							if(u.isInWeaponRange(hisUnit) || hisUnit.getDistance(u) < bestEnemy.getDistance(u)) {
+								bestEnemy = hisUnit;
+								bestEnemyHitsToKill = hitsToKill;
+							}
+						} else if(u.isInWeaponRange(hisUnit) && (hitsToKill < bestEnemyHitsToKill 
+								|| (hitsToKill == bestEnemyHitsToKill && hisUnit.getDistance(u) < bestEnemy.getDistance(u)))) {
+								
+								bestEnemy = hisUnit;
+								bestEnemyHitsToKill = hitsToKill;
+						}
 					}
 				}
 			}
