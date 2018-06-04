@@ -37,26 +37,32 @@ public class Dragoon extends MyUnit {
 //							game.drawTextMap(u.getPosition(),"charging");
 					}
 				} else {
-					int myRange = game.self().weaponMaxRange(u.getType().groundWeapon());
-					double hisSpeed = game.enemy().topSpeed(target.getType());
-					if(target.isStimmed())
-						hisSpeed *= 1.5;
-					int hisRange = game.enemy().weaponMaxRange(target.getType().groundWeapon());
-					if(!u.isInWeaponRange(target)) {
-						move(target.getPosition());
-					} else if(target.getType().canMove() || target.getType() == UnitType.Terran_Bunker) {
-//						&&	Math.max(myRange - hisRange, u.getDistance(target)) + 8*(u.getType().topSpeed() - hisSpeed) > 0 ) {
-						//kiting behavior
-						moveAwayFrom(target.getPosition());
-//						game.drawTextMap(u.getPosition(), ""+u.getGroundWeaponCooldown());
+					if(attackBuildings) {
+						move(pos);
+					} else {
+						int myRange = game.self().weaponMaxRange(u.getType().groundWeapon());
+						double hisSpeed = game.enemy().topSpeed(target.getType());
+						if(target.isStimmed())
+							hisSpeed *= 1.5;
+						int hisRange = game.enemy().weaponMaxRange(target.getType().groundWeapon());
+						if(!u.isInWeaponRange(target)) {
+							move(target.getPosition());
+						} else if(target.getType().canMove() || target.getType() == UnitType.Terran_Bunker) {
+	//						&&	Math.max(myRange - hisRange, u.getDistance(target)) + 8*(u.getType().topSpeed() - hisSpeed) > 0 ) {
+							//kiting behavior
+							moveDownGradient(threatVector());
+							//moveAwayFrom(pos);
+	//						game.drawTextMap(u.getPosition(), ""+u.getGroundWeaponCooldown());
+						}
 					}
-					
 					if(shotsFired) {
 						isRequestingEvac = true;
 					}
 				}
+//				game.drawTextMap(u.getPosition(),"1");
 //				game.drawTextMap(u.getPosition(),""+u.getLastCommand().getUnitCommandType());
 			} else {
+//				game.drawTextMap(u.getPosition(),"2");
 			}
 		} else if(isFree()) {
 //			if((u.getLastCommand().getUnitCommandType() != UnitCommandType.Attack_Move
@@ -76,11 +82,13 @@ public class Dragoon extends MyUnit {
 			}
 			move(pos);
 			gotCommand = true;
+//			game.drawTextMap(u.getPosition(),"3");
 		} else {
 			if(shotsFired) {
 				isRequestingEvac = true;
 			}
 			game.drawTextMap(u.getPosition(), "busy atk");
+//			game.drawTextMap(u.getPosition(),"4");
 		}
 		
 		if(u.isLoaded()) {

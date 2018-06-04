@@ -3,6 +3,7 @@ import bwapi.Game;
 import bwapi.Position;
 import bwapi.TechType;
 import bwapi.Unit;
+import bwapi.UnitCommandType;
 import bwapi.UnitType;
 import bwapi.WeaponType;
 import bwta.BWTA;
@@ -20,7 +21,8 @@ public class Shuttle extends MyUnit {
 		//target = getTarget(false);
     	double[] moveVector = {0,0};
     	for(Unit myUnit: u.getUnitsInRadius(32)) {
-    		if(myUnit.getPlayer() == game.self() && myUnit.isCompleted()) {
+    		if(myUnit.getPlayer() == game.self() && myUnit.isCompleted() 
+    			&& myUnit.getLastCommand().getUnitCommandType() != UnitCommandType.Right_Click_Unit) {
     			if(myUnit.getType() == UnitType.Protoss_Reaver
     				&& u.getSpaceRemaining() >= UnitType.Protoss_Reaver.spaceRequired()
     				&& (myUnit.getScarabCount() + myUnit.getTrainingQueue().size() == 5 || game.self().minerals() < 15)
@@ -118,9 +120,9 @@ public class Shuttle extends MyUnit {
      	double hisRange;
      	double[] threatVector = {0,0};
 		for(Unit hisUnit: u.getUnitsInRadius(u.getType().sightRange() + 2*32)) {
-			if(hisUnit.getPlayer().equals(game.enemy())				
+			if(hisUnit.getPlayer().equals(game.enemy())	&& hisUnit.isCompleted()			
 				&& (!hisUnit.getType().isBuilding() || hisUnit.getType().canAttack() || hisUnit.getType() == UnitType.Terran_Bunker)) {
-				d = u.getPosition().getApproxDistance(hisUnit.getPosition());
+				d = u.getDistance(hisUnit);
 				hisSize = Math.sqrt(Math.pow(hisUnit.getType().width(),2) + Math.pow(hisUnit.getType().height(),2))/2;	 
 				
 				if (!hisUnit.getType().airWeapon().equals(WeaponType.None)) {
@@ -185,11 +187,11 @@ public class Shuttle extends MyUnit {
 							clusterVector[1] += 0.4*damageFactor*scale/d*(otherUnit.getY()-u.getY());
 							clusterVector[0] += 1*damageFactor*scale*8*32/d/d*(otherUnit.getX()-u.getX());
 							clusterVector[1] += 1*damageFactor*scale*8*32/d/d*(otherUnit.getY()-u.getY());
-						} if(d > 32) {
+						} if(d > 48) {
 							clusterVector[0] += 0.2*damageFactor*scale/d*(otherUnit.getX()-u.getX());
 							clusterVector[1] += 0.2*damageFactor*scale/d*(otherUnit.getY()-u.getY());
-							clusterVector[0] += 0.2*damageFactor*scale*8*32/d/d*(otherUnit.getX()-u.getX());
-							clusterVector[1] += 0.2*damageFactor*scale*8*32/d/d*(otherUnit.getY()-u.getY());
+							clusterVector[0] += 0.2*damageFactor*scale*8*32/Math.max(2*32,d)/d*(otherUnit.getX()-u.getX());
+							clusterVector[1] += 0.2*damageFactor*scale*8*32/Math.max(2*32,d)/d*(otherUnit.getY()-u.getY());
 						} else {
 							clusterVector[0] -= 0.2/damageFactor*scale/d*(otherUnit.getX()-u.getX());
 							clusterVector[1] -= 0.2/damageFactor*scale/d*(otherUnit.getY()-u.getY());

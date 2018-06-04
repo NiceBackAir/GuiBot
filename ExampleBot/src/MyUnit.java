@@ -18,6 +18,7 @@ public class MyUnit extends PositionedObject {
 //	protected Position objective;
 	protected Position attackPoint;
 	protected Unit target;
+	protected Unit targetBuilding;
 	protected Position retreatPoint;
 	protected int scale;
 	protected UnitState state;
@@ -76,15 +77,11 @@ public class MyUnit extends PositionedObject {
 		}
 	}
 	
-	public void moveDownGradient() {
-		
-	}
-	
 	public void scout() {
 	}
 	
 	public void kiteBack(Position pos) throws Exception {
-		if(u.getGroundWeaponCooldown() == 0)
+		if(u.getGroundWeaponCooldown() == 0 || u.isAttackFrame())
 			attack(pos, false);
 		else
 			move(pos);
@@ -148,21 +145,30 @@ public class MyUnit extends PositionedObject {
 	public void move(Position pos) throws Exception {
 		target = null;
 		if(!gotCommand) {
-//			if(u.getLastCommand().getUnitCommandType() == UnitCommandType.Move && (!u.isMoving() || u.isIdle())) {
-//				//fix the weird stuck unit glitch
-//				u.stop();
-//				game.sendText("why");
-//			} else
-			
-			if(u.isAttackFrame() && u.getLastCommand().getUnitCommandType() != UnitCommandType.Stop)
+			if(u.getLastCommand().getUnitCommandType() == UnitCommandType.Move 
+				&& (!u.isMoving() || u.isIdle() || !u.isInterruptible() || !u.canMove(true) || u.isStuck() || !u.canCommand() || u.getLastCommand().isQueued())) {
+				//fix the weird stuck unit glitch
+				game.sendText("why");
 				u.stop();
-//			else if(u.getLastCommand().getUnitCommandType() != UnitCommandType.Move || u.getLastCommand().getTargetPosition() != pos)
-			else
+			} else
 				u.move(pos);
+//			else if(u.getLastCommand().getUnitCommandType() != UnitCommandType.Move || u.getLastCommand().getTargetPosition() != pos)
 //			game.drawLineMap(u.getPosition(), pos, Color.Teal);
 		} 
 		gotCommand = true;
 	}
+
+	public void moveDownGradient(double[] moveVector) throws Exception {
+		moveVector = GuiBot.setMagnitude(terrainCorrection(moveVector), scale);
+		moveVector = GuiBot.setMagnitude(adjustForWalls(moveVector, u), scale);
+ 		
+		Position destination = new Position(u.getX()+(int)moveVector[0], u.getY()+(int)moveVector[1]);
+
+		move(destination);
+
+ 		gotCommand = true;
+	}
+
 	public void moveAwayFrom(Position pos) throws Exception {
 		double d = u.getPosition().getApproxDistance(pos);
 		double[] moveVector = {(u.getX()-pos.getX())*scale/d, (u.getY()-pos.getY())*scale/d};
@@ -201,6 +207,7 @@ public class MyUnit extends PositionedObject {
 		moveVector = GuiBot.setMagnitude(moveVector, scale);
 		moveVector = terrainCorrection(moveVector);
 		moveVector = adjustForWalls(moveVector, u);
+		moveVector = GuiBot.setMagnitude(moveVector, scale);
 // 		game.drawLineMap(u.getPosition(), new Position(u.getX() + (int)moveVector[0], u.getY() + (int)moveVector[1]), Color.Blue);
 		
  		Position destination = new Position(u.getX()+(int)moveVector[0], u.getY()+(int)moveVector[1]);
@@ -351,50 +358,133 @@ public class MyUnit extends PositionedObject {
 		gotCommand = true;
 	}
 		
-	public Unit getTarget(boolean attackBuildings) throws Exception {
-		Unit bestEnemy = null;
-		int range = Math.max(u.getType().seekRange(), game.self().weaponMaxRange(u.getType().groundWeapon()) + 32);
-		if(range == 0 || !u.getType().canAttack()) {
-			range = u.getType().sightRange();
-		}
-		int bestEnemyHitsToKill = 999;
-		int hitsToKill = 999;
-		for(Unit hisUnit: u.getUnitsInRadius(range)) {// u.getUnitsInWeaponRange(u.getType().groundWeapon())) {
-			if(hisUnit.getPlayer() == game.enemy()) {
-				if(!hisUnit.isInvincible() && hisUnit.isDetected()//u.isInWeaponRange(hisUnit)  && 
-					&& (hisUnit.isCompleted() || hisUnit.getType().isBuilding() || hisUnit.getType() == UnitType.Zerg_Lurker_Egg)
-					&& (attackBuildings || !hisUnit.getType().isBuilding() || hisUnit.getType().canAttack()
-					|| hisUnit.getType() == UnitType.Terran_Bunker)		
-					&& hisUnit.getType() != UnitType.Zerg_Egg && hisUnit.getType() != UnitType.Zerg_Larva 
-					&& (!hisUnit.isFlying() || u.getType().airWeapon() != WeaponType.None)) {
-
-					hitsToKill = hisUnit.getHitPoints()/game.getDamageTo(hisUnit.getType(), u.getType(), game.enemy(), game.self()) 
-						+ hisUnit.getShields()/u.getType().groundWeapon().damageAmount();
+	public double[] threatVector() {
+		double d;
+     	double mySize = Math.sqrt(Math.pow(u.getType().width(),2) + Math.pow(u.getType().height(),2))/2;
+     	double hisSize;
+     	double hisRange;
+     	double[] threatVector = {0,0};
+		for(Unit hisUnit: u.getUnitsInRadius(u.getType().sightRange() + 2*32)) {
+			if(hisUnit.getPlayer().equals(game.enemy())	&& hisUnit.isCompleted()				
+				&& (!hisUnit.getType().isBuilding() || hisUnit.getType().canAttack() || hisUnit.getType() == UnitType.Terran_Bunker)) {
+				d = u.getPosition().getApproxDistance(hisUnit.getPosition());
+				hisSize = Math.sqrt(Math.pow(hisUnit.getType().width(),2) + Math.pow(hisUnit.getType().height(),2))/2;	 
+				
+				if (!hisUnit.getType().groundWeapon().equals(WeaponType.None)) {
+					hisRange = game.enemy().weaponMaxRange(hisUnit.getType().groundWeapon()) + 16 + hisSize + mySize;
+    				threatVector[0] += -2*hisRange/d/d*(hisUnit.getX()-u.getX());
+					threatVector[1] += -2*hisRange/d/d*(hisUnit.getY()-u.getY());
+				} 
+			}
+		}	
+		
+		//avoid turrets that you can't even see
+		HisUnit hisTurret;
+		HashMap<Integer, HisUnit> enemyBuildings = GuiBot.enemyBuildings;
+		for(int ID: enemyBuildings.keySet()) {
+			hisTurret = enemyBuildings.get(ID);
+			if(!hisTurret.getUnit().isVisible() && hisTurret.getPosition() != null 	&& hisTurret.isCompleted()) {
+				if(!hisTurret.getType().isBuilding() || hisTurret.getType().canAttack() || hisTurret.getType() == UnitType.Terran_Bunker) {
+					d = u.getPosition().getApproxDistance(hisTurret.getPosition());
+					hisSize = Math.sqrt(Math.pow(hisTurret.getType().width(),2) + Math.pow(hisTurret.getType().height(),2))/2;	 
 					
-					if(bestEnemy == null) {
-						bestEnemy = hisUnit;
-						bestEnemyHitsToKill = hitsToKill;
-					} else if(!hisUnit.isDefenseMatrixed()) {
-						if(!u.isInWeaponRange(bestEnemy)) {
-							if(u.isInWeaponRange(hisUnit) || hisUnit.getDistance(u) < bestEnemy.getDistance(u)) {
-								bestEnemy = hisUnit;
-								bestEnemyHitsToKill = hitsToKill;
+					if (d < 17*32 && !hisTurret.getType().groundWeapon().equals(WeaponType.None)) {
+						hisRange = game.enemy().weaponMaxRange(hisTurret.getType().groundWeapon()) + 16 + hisSize + mySize;
+	    				threatVector[0] += -2*hisRange/d/d*(hisTurret.getX()-u.getX());
+						threatVector[1] += -2*hisRange/d/d*(hisTurret.getY()-u.getY());
+					} 
+				}
+			}
+		}
+		return threatVector;
+	}
+	
+	public double threatLevel() {
+		double d;
+     	double mySize = Math.sqrt(Math.pow(u.getType().width(),2) + Math.pow(u.getType().height(),2))/2;
+     	double hisSize;
+     	double hisRange;
+     	double threatLevel = 0;
+		for(Unit hisUnit: u.getUnitsInRadius(u.getType().sightRange() + 2*32)) {
+			if(hisUnit.getPlayer().equals(game.enemy())				
+				&& (!hisUnit.getType().isBuilding() || hisUnit.getType().canAttack() || hisUnit.getType() == UnitType.Terran_Bunker)) {
+				d = u.getPosition().getApproxDistance(hisUnit.getPosition());
+				hisSize = Math.sqrt(Math.pow(hisUnit.getType().width(),2) + Math.pow(hisUnit.getType().height(),2))/2;	 
+				
+				if (!hisUnit.getType().groundWeapon().equals(WeaponType.None)) {
+					hisRange = game.enemy().weaponMaxRange(hisUnit.getType().groundWeapon()) + 16 + hisSize + mySize;
+					threatLevel += 2*hisRange/d;
+				} 
+			}
+		}	
+		
+		//avoid turrets that you can't even see
+		HisUnit hisTurret;
+		HashMap<Integer, HisUnit> enemyBuildings = GuiBot.enemyBuildings;
+		for(int ID: enemyBuildings.keySet()) {
+			hisTurret = enemyBuildings.get(ID);
+			if(!hisTurret.getUnit().isVisible() && hisTurret.getPosition() != null) {
+				if(!hisTurret.getType().isBuilding() || hisTurret.getType().canAttack() || hisTurret.getType() == UnitType.Terran_Bunker) {
+					d = u.getPosition().getApproxDistance(hisTurret.getPosition());
+					hisSize = Math.sqrt(Math.pow(hisTurret.getType().width(),2) + Math.pow(hisTurret.getType().height(),2))/2;	 
+					
+					if (d < 17*32 && !hisTurret.getType().groundWeapon().equals(WeaponType.None)) {
+						hisRange = game.enemy().weaponMaxRange(hisTurret.getType().groundWeapon()) + 16 + hisSize + mySize;
+						threatLevel += 2*hisRange/d;
+					} 
+				}
+			}
+		}
+		return threatLevel;
+	}
+	
+	public Unit getTarget(boolean attackBuildings) throws Exception {
+			Unit bestEnemy = null;
+			int range = Math.max(u.getType().seekRange(), game.self().weaponMaxRange(u.getType().groundWeapon()) + 32);
+			if(range == 0 || !u.getType().canAttack()) {
+				range = u.getType().sightRange();
+			}
+			int bestEnemyHitsToKill = 999;
+			int hitsToKill = 999;
+			for(Unit hisUnit: u.getUnitsInRadius(range)) {// u.getUnitsInWeaponRange(u.getType().groundWeapon())) {
+				if(hisUnit.getPlayer() == game.enemy()) {
+					if(!hisUnit.isInvincible() && hisUnit.isDetected()//u.isInWeaponRange(hisUnit)  && 
+						&& (hisUnit.isCompleted() || hisUnit.getType().isBuilding() || hisUnit.getType() == UnitType.Zerg_Lurker_Egg)
+						&& (attackBuildings || !hisUnit.getType().isBuilding() || hisUnit.getType().canAttack()
+						|| hisUnit.getType() == UnitType.Terran_Bunker)		
+						&& hisUnit.getType() != UnitType.Zerg_Egg && hisUnit.getType() != UnitType.Zerg_Larva 
+						&& (!hisUnit.isFlying() || u.getType().airWeapon() != WeaponType.None)) {
+						
+						int damage = Math.max(1, game.getDamageTo(hisUnit.getType(), u.getType(), game.enemy(), game.self()));
+						hitsToKill = hisUnit.getHitPoints()/damage + hisUnit.getShields()/u.getType().groundWeapon().damageAmount();
+						//high ground advantage
+						if(game.getGroundHeight(hisUnit.getTilePosition()) > game.getGroundHeight(u.getTilePosition()))
+							hitsToKill *=2;
+						
+						if(bestEnemy == null) {
+							bestEnemy = hisUnit;
+							bestEnemyHitsToKill = hitsToKill;
+						} else if(!hisUnit.isDefenseMatrixed()) {
+							if(!u.isInWeaponRange(bestEnemy)) {
+								if(u.isInWeaponRange(hisUnit) || hisUnit.getDistance(u) < bestEnemy.getDistance(u)) {
+									bestEnemy = hisUnit;
+									bestEnemyHitsToKill = hitsToKill;
+								}
+							} else if(u.isInWeaponRange(hisUnit) && (hitsToKill < bestEnemyHitsToKill 
+									|| (hitsToKill == bestEnemyHitsToKill && hisUnit.getDistance(u) < bestEnemy.getDistance(u)))) {
+									
+									bestEnemy = hisUnit;
+									bestEnemyHitsToKill = hitsToKill;
 							}
-						} else if(u.isInWeaponRange(hisUnit) && (hitsToKill < bestEnemyHitsToKill 
-								|| (hitsToKill == bestEnemyHitsToKill && hisUnit.getDistance(u) < bestEnemy.getDistance(u)))) {
-								
-								bestEnemy = hisUnit;
-								bestEnemyHitsToKill = hitsToKill;
 						}
 					}
 				}
 			}
+	//		if(closestEnemy != null)
+	//			game.drawLineMap(u.getPosition(), closestEnemy.getPosition(), Color.White);
+			return bestEnemy;
 		}
-//		if(closestEnemy != null)
-//			game.drawLineMap(u.getPosition(), closestEnemy.getPosition(), Color.White);
-		return bestEnemy;
-	}
-	
+
 	public Position getTargetPosition() throws Exception {
 		HashMap<TilePosition, Double> stormMap = new HashMap<TilePosition, Double>();
 		TilePosition tempTile = null;

@@ -65,6 +65,7 @@ public class Reaver extends MyUnit {
 		int range = 8*32 + 16;
 //		System.out.println(range);
 		double groundDistance = 0;
+		double closestGroundDistance = 9999;
 		for(Unit hisUnit: u.getUnitsInRadius(range)) {// u.getUnitsInWeaponRange(u.getType().groundWeapon())) {
 			if(hisUnit.getPlayer() == game.enemy()) {
 				if(!hisUnit.isInvincible() && !hisUnit.isFlying() //u.isInWeaponRange(hisUnit) && hisUnit.isDetected() && 
@@ -75,14 +76,14 @@ public class Reaver extends MyUnit {
 //					&& hisUnit.hasPath(u)
 					
 					if(BWTA.getRegion(u.getPosition()) == BWTA.getRegion(u.getPosition()))
-						groundDistance = hisUnit.getPosition().getDistance(u.getPosition());
+						groundDistance = hisUnit.getDistance(u);
 					else
 						groundDistance = BWTA.getGroundDistance(hisUnit.getTilePosition(), u.getTilePosition()) - 32;
 					
 					if (groundDistance < range && groundDistance >= 0) {
-					
-						if(closestEnemy == null || hisUnit.getDistance(u) < closestEnemy.getDistance(u)) {
+						if(closestEnemy == null || groundDistance < closestGroundDistance) {
 							closestEnemy = hisUnit;
+							closestGroundDistance = groundDistance;
 						}
 					}
 				}

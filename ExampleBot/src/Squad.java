@@ -93,7 +93,7 @@ public class Squad {
 //		System.out.println(objective + " " + center);
 		boolean attackBuildings = false;
 		boolean canAttackAir = canAttackAir();
-		for(Unit hisUnit: game.getUnitsInRadius(center, 8*32)) {
+		for(Unit hisUnit: game.getUnitsInRadius(center, range)) {
 			if(hisUnit.getPlayer() == game.enemy() && hisUnit.isDetected() && !hisUnit.isInvincible()
 				&& hisUnit.getType() != UnitType.Resource_Vespene_Geyser 
 				&& (hisUnit.isCompleted() || hisUnit.getType().isBuilding()|| hisUnit.getType() == UnitType.Zerg_Lurker_Egg)			
@@ -118,7 +118,7 @@ public class Squad {
 		}
 		
 		Iterator<MyUnit> itr = units.iterator();
-		if(isStaged(objective, range) || units.size() == 1 || (attackBuildings && objective.getApproxDistance(center) < 11*32)) {
+		if(isStaged(objective, range) || units.size() == 1 || attackBuildings) {// && objective.getApproxDistance(center) < 11*32)) {
 			while(itr.hasNext()) {
 				myUnit = itr.next();
 				if(myUnit.getUnit().exists()) {
@@ -167,6 +167,7 @@ public class Squad {
 	}
 	
 	public void contain(Position pos, int range) throws Exception {
+		command = UnitState.CONTAINING;
 		objective = pos;
 		Iterator<MyUnit> itr = units.iterator();
 		MyUnit myUnit;
@@ -176,8 +177,16 @@ public class Squad {
 			myUnit = itr.next();
 			if(myUnit.getUnit().exists()) {
 				d = myUnit.getPosition().getApproxDistance(pos);
-				if(d >= range + 5*32) {
+				if(d >= range + 6*32) {
 					myUnit.move(pos);
+				} else if(myUnit.getTarget(false) != null) {
+					if(myUnit.threatLevel() <= 3.0) {
+						myUnit.kiteBack(game.self().getStartLocation().toPosition());
+						game.drawTextMap(myUnit.getPosition(),"  fite");
+					} else {
+						myUnit.move(game.self().getStartLocation().toPosition());
+						game.drawTextMap(myUnit.getPosition(),"run");
+					}
 				} else if(d >= range)
 					myUnit.surround(pos, center, range);
 				else
@@ -249,8 +258,8 @@ public class Squad {
 		centerY /= units;
 
 		center = new Position(centerX, centerY);
-		game.drawCircleMap(new Position(centerX, centerY), 3, Color.Green);
-		game.drawTextMap(new Position(centerX, centerY), ""+units);
+//		game.drawCircleMap(new Position(centerX, centerY), 3, Color.Green);
+//		game.drawTextMap(new Position(centerX, centerY), ""+units);
 		
 		return center;		
 	}
@@ -298,7 +307,7 @@ public class Squad {
 	}
 	public boolean isStaged(Position pos, int range) {		
 		Position center = findCenter();
-		if(center != null && center.getApproxDistance(pos) <  range+32)
+		if(center != null && center.getApproxDistance(pos) < range+16)
 			return true;
 
 		for(MyUnit u: units) {

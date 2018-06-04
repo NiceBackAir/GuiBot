@@ -39,7 +39,7 @@ public class GuiBot extends DefaultBWListener {
     private HashMap<UnitType, Integer> enemiesKilledTab;
     private HashMap<UnitType, Integer> unitLostTab;
     private HashSet<TechType> enemyResearchTab;
-    private HashMap<Integer, HisUnit> enemyBuildings;
+    protected static HashMap<Integer, HisUnit> enemyBuildings;
     private HashMap<Integer, HisUnit> enemyArmy;
     protected static HashMap<Integer, MyUnit> myUnits;
     private Squad freeAgents;
@@ -1005,8 +1005,7 @@ public class GuiBot extends DefaultBWListener {
 	        				enemyBases.put(r, new HisBase(game, base));
 	        			}
 
-	        		} else if(!u.getType().isBuilding() || u.getType().canAttack() 
-    					|| u.getType() == UnitType.Terran_Bunker) {
+	        		} else if(!u.getType().isBuilding() || u.getType().canAttack() || u.getType() == UnitType.Terran_Bunker) {
 	        			
 	        			r = BWTA.getRegion(u.getPosition());
 	        			if(enemyBases.containsKey(r)) {
@@ -1087,6 +1086,7 @@ public class GuiBot extends DefaultBWListener {
 				u.update();
         }
         enemyArmyTab.clear();
+        
         enemyArmySupply = 0;
         for(int i: enemyArmy.keySet()) {
         	u = enemyArmy.get(i);
@@ -1101,6 +1101,14 @@ public class GuiBot extends DefaultBWListener {
 //    			if(u.getPosition() != null)
 //    				game.drawTextMap(u.getPosition(), "" + u.getType());
     		}
+        }
+        for(int i: enemyBuildings.keySet()) {
+        	u = enemyBuildings.get(i);
+        	if(u.getType() == UnitType.Terran_Siege_Tank_Siege_Mode) {
+        		enemyArmySupply += 4;
+        	} else if(u.getType() == UnitType.Terran_Bunker) {
+        		enemyArmySupply += 8;
+        	}
         }
 
         //left panel debug messages
@@ -1507,8 +1515,10 @@ public class GuiBot extends DefaultBWListener {
     		nextBuilding = UnitType.Protoss_Citadel_of_Adun;    
     	} else if(gasBases < 3) {
     		nextBuilding = UnitType.Protoss_Nexus; 
+    	} else if(self.allUnitCount(UnitType.Protoss_Gateway) < 6) {
+    		nextBuilding = UnitType.Protoss_Gateway; 
 		} else if(self.allUnitCount(UnitType.Protoss_Templar_Archives) == 0) {	        		
-			nextBuilding = UnitType.Protoss_Templar_Archives;    	  	
+			nextBuilding = UnitType.Protoss_Templar_Archives;    	  
     	} else if(self.allUnitCount(UnitType.Protoss_Forge) == 0) {
     		nextBuilding = UnitType.Protoss_Forge; 
     	} else if(self.allUnitCount(UnitType.Protoss_Gateway) < Math.min(15, (patchCount*3)/8)) {
@@ -2367,7 +2377,7 @@ public class GuiBot extends DefaultBWListener {
     		squad = squadItr.next();
     		if(squad.getUnits().size() > 0) {
     			center = squad.findCenter();
-		    	if(aBaseIsUnderAttack || (armySupply > enemyArmySupply &&
+		    	if(aBaseIsUnderAttack || 
 		    		(squad.getUnits().size() >= 12 || squad.getCommand() == UnitState.ATTACKING
 		    		|| self.supplyUsed() >= 380 
 	//	    		|| (center.getApproxDistance(squad.getObjective()) < 10*32 && squad.getUnitCount(UnitType.Protoss_Zealot) == 0)
@@ -2376,7 +2386,7 @@ public class GuiBot extends DefaultBWListener {
 		    			&& !enemyBuildingTab.containsKey(UnitType.Terran_Siege_Tank_Siege_Mode)
 		    			&& game.enemy().getUpgradeLevel(UpgradeType.Ion_Thrusters) == 0)
 		    		|| (enemyRace == Race.Protoss && self.allUnitCount(UnitType.Protoss_Nexus) > 1))
-		    		)) {
+		    		) {
 		    		//recruit nearby idle units
 		    		Iterator<MyUnit> itr = freeAgents.getUnits().iterator();
 		    		MyUnit freeUnit;
@@ -2409,10 +2419,11 @@ public class GuiBot extends DefaultBWListener {
 		    		}
 		    		
 		    		//send commands
-		    		if(squad.isTogether() || squad.getCommand() == UnitState.ATTACKING) {
+//		    		if(squad.isTogether() || squad.getCommand() == UnitState.ATTACKING) {
+		    		if(aBaseIsUnderAttack || armySupply >= enemyArmySupply) {
 			    		squad.attack(range);
 		    		} else {
-		    			squad.groupUp();
+		    			squad.contain(squad.getObjective(), range);
 		    		}
 	
 		    	} else if(defenseChoke != null ) {
@@ -2456,260 +2467,22 @@ public class GuiBot extends DefaultBWListener {
     				myUnit.commandShuttle(dropBase);
     		}
     	}
-    	Unit closestGroundSquishy;
-    	Unit closestGroundEnemy;
-    	Unit closestCloaked;
-    	boolean canStorm = false;
-    	Unit weakestAirEnemy;
-    	int myRange;
-    	int hisRange = 0;
-    	double himToMeX = 0;
-    	double himToMeY = 0;
-    	double hisSpeedTowardsMe = 0;
-    	double mySpeedTowardsHim = 0;
+    	
+    	//last remnants of the old times
     	for(Unit myUnit:self.getUnits()) {
-    		closestEnemy = null;
-    		closestSquishy = null;
-    		closestGroundSquishy = null;
-    		closestGroundEnemy = null;
-        	closestCloaked = null;
-        	weakestAirEnemy = null;
-    		if(myUnit.isCompleted() && !myUnit.getType().isBuilding() && !myUnit.getType().isWorker() && myUnit.getType() != UnitType.Protoss_Shuttle
-    			&& myUnit.getType() != UnitType.Protoss_Zealot && myUnit.getType() != UnitType.Protoss_Dragoon
-    			&& myUnit.getType() != UnitType.Protoss_High_Templar && myUnit.getType() != UnitType.Protoss_Archon && myUnit.getType() != UnitType.Protoss_Reaver) {
-				for(Unit hisUnit: myUnit.getUnitsInRadius(myUnit.getType().sightRange())) { 				
-					if(hisUnit.getPlayer().equals(game.enemy()) && hisUnit.isVisible(self) && hisUnit.isDetected() && !hisUnit.isInvincible() 					
-						&& (!hisUnit.getType().isBuilding() || hisUnit.getType().canAttack() || hisUnit.getType() == UnitType.Terran_Bunker)
-						&& hisUnit.getType() != UnitType.Zerg_Larva && hisUnit.getType() != UnitType.Zerg_Egg) {
-						
-						if(closestEnemy == null ||	myUnit.getPosition().getApproxDistance(hisUnit.getPosition()) < myUnit.getPosition().getApproxDistance(closestEnemy.getPosition())) {  						
-							closestEnemy = hisUnit;
-						}
-						
-						if(!hisUnit.getType().isBuilding())
-							canStorm = true;
-						
-						if(!hisUnit.isFlying() && (closestGroundSquishy == null
-							|| myUnit.getPosition().getApproxDistance(hisUnit.getPosition()) < myUnit.getPosition().getApproxDistance(closestGroundSquishy.getPosition()))) {
-							
-							closestGroundSquishy = hisUnit;
-						}
-					}    				
-				}	
-				closestSquishy = closestEnemy;
-				for(Unit hisUnit: myUnit.getUnitsInRadius(myUnit.getType().sightRange()+32)) {    				
-					if(hisUnit.getPlayer().equals(game.enemy()) && hisUnit.isVisible(self) && hisUnit.isDetected()
-						&& hisUnit.getType() != UnitType.Zerg_Larva && hisUnit.getType() != UnitType.Zerg_Egg) {
-//							&& hisUnit.getType().isBuilding() && !hisUnit.getType().canAttack() && hisUnit.getType() != UnitType.Terran_Bunker) {
-						
-						if(closestSquishy == null && (closestEnemy == null 
-							|| myUnit.getPosition().getApproxDistance(hisUnit.getPosition()) < myUnit.getPosition().getApproxDistance(closestEnemy.getPosition()))) {    					
-							closestEnemy = hisUnit;
-						}
-						if(hisUnit.isFlying()
-							&& (weakestAirEnemy == null || hisUnit.getHitPoints() + hisUnit.getShields() < weakestAirEnemy.getHitPoints() + weakestAirEnemy.getShields() ||
-							(hisUnit.getHitPoints() + hisUnit.getShields() == weakestAirEnemy.getHitPoints() + weakestAirEnemy.getShields()
-							&& myUnit.getPosition().getApproxDistance(hisUnit.getPosition()) < myUnit.getPosition().getApproxDistance(weakestAirEnemy.getPosition())))) {  
-							
-							weakestAirEnemy = hisUnit;
-						}
-						
-						if(!hisUnit.isFlying() 
-							&& (closestGroundEnemy == null ||myUnit.getPosition().getApproxDistance(hisUnit.getPosition()) < myUnit.getPosition().getApproxDistance(closestGroundEnemy.getPosition()))) {  
-							
-							closestGroundEnemy = hisUnit;
-						}
-					}    				
-				}
-
-				myRange = self.weaponMaxRange(myUnit.getType().groundWeapon());
-				if(closestEnemy != null) {			    	
-			    	hisRange = game.enemy().weaponMaxRange(closestEnemy.getType().groundWeapon());
-			    	if(closestEnemy.getDistance(myUnit) == 0) {
-			    		hisSpeedTowardsMe = Math.sqrt(Math.pow(closestEnemy.getVelocityX(),2) + Math.pow(closestEnemy.getVelocityY(),2));
-			    	} else {
-				    	himToMeX = (myUnit.getX() - closestEnemy.getX())/closestEnemy.getDistance(myUnit);
-				    	himToMeY = (myUnit.getY() - closestEnemy.getY())/closestEnemy.getDistance(myUnit);
-				    	hisSpeedTowardsMe = closestEnemy.getVelocityX()*himToMeX + closestEnemy.getVelocityY()*himToMeY;
-				    	mySpeedTowardsHim = -myUnit.getVelocityX()*himToMeX - myUnit.getVelocityY()*himToMeY;
-			    	}
-				}
-				
-	    		if(myUnit.getType() == UnitType.Protoss_Shuttle) {  
-	    			boolean gotCommand = false;
-	    			Unit closestPassenger = null;
-	    			Unit followUnit = null;
- 		    				
-    				//loaded	    		
-    				if(myUnit.canUnload()) {		    
-		    			if(closestSquishy != null && !closestSquishy.getType().groundWeapon().equals(WeaponType.None)
-			    			&& closestSquishy.getDistance(myUnit) <= game.enemy().weaponMaxRange(closestSquishy.getType().groundWeapon())) {
-			    				
-			    			//don't drop in a dangerous area
-			    			myUnit.move(self.getStartLocation().toPosition());
-			    			gotCommand = true;
-		    			} else {
-		    				for(Unit u: myUnit.getLoadedUnits()) {	
-		    					if(u.getType() == UnitType.Protoss_Reaver && u.getScarabCount() > 0 
-		    						&& closestGroundSquishy != null		
-		    						&& BWTA.getRegion(myUnit.getPosition()) != null			
-//		    			    		&& BWTA.getRegion(myUnit.getPosition()).equals(BWTA.getRegion(closestGroundSquishy.getPosition()))
-		    						&& closestGroundSquishy.hasPath(u.getPosition())
-		    			    		&& BWTA.getGroundDistance(u.getTilePosition(), closestGroundSquishy.getTilePosition()) <= 8*32
-		    			    		) { 
-		    						
-		    						if(myUnit.getDistance(closestGroundSquishy) <= 8*32)
-		    							myUnit.unload(u);
-		    						else 
-		    							myUnit.move(self.getStartLocation().toPosition());
-		    						gotCommand = true;
-		    					} else if (u.getType() == UnitType.Protoss_High_Templar && u.getEnergy() >= 75 
-		    						&& self.hasResearched(TechType.Psionic_Storm) && closestGroundSquishy != null) {
-		    						myUnit.unload(u);
-		    						gotCommand = true;
-		    					} else if (u.getType() == UnitType.Protoss_Dragoon && u.getGroundWeaponCooldown() == 0) {
-		    						if(closestSquishy == null 
-		    							|| !closestSquishy.isInWeaponRange(myUnit)
-		    							|| myUnit.getPosition().getApproxDistance(self.getStartLocation().toPosition()) < 10)
-		    							myUnit.unload(u);
-		    						else 
-		    							myUnit.move(self.getStartLocation().toPosition());
-		    						gotCommand = true;
-		    					}
-		    				}
-		    			}
-	    			}
-//	    				if(self.completedUnitCount(UnitType.Protoss_Zealot) > 0) {
-//	    					Unit closestZealot = null;
-//	    					for(Unit u: self.getUnits()) {
-//	    						if(u.getType() == UnitType.Protoss_Zealot && (closestZealot == null 
-//	    							|| u.getDistance(myUnit.getPosition()) < closestZealot.getDistance(myUnit.getPosition()))) {
-//	    							
-//	    							myUnit.load(closestZealot);
-//	    						}		    							
-//	    					}	
-//	    				}
-    				if(!gotCommand && self.allUnitCount(UnitType.Protoss_Reaver) > 0 
-    					&& myUnit.getSpaceRemaining() >= UnitType.Protoss_Reaver.spaceRequired()) {
-    				//empty	
-    					closestPassenger = null;
-    					followUnit = null;
-    					boolean hasReaver = false;
-    					for(Unit u: self.getUnits()) {
-    						if(u.getType() == UnitType.Protoss_Reaver) {
-    							if(!u.isLoaded()) {
-	    							if (closestGroundSquishy == null && u.getTrainingQueue().size() + u.getScarabCount() == 5
-	    								|| closestGroundSquishy != null && (u.getTrainingQueue().size() == 1 && u.getRemainingTrainTime() > 90 
-	    								|| u.getTrainingQueue().size() > 1)) {		
-	    								if(closestPassenger == null || u.getDistance(myUnit) < closestPassenger.getDistance(myUnit)) {
-	    									closestPassenger = u;		    							
-	    								}
-		    						} else if(u.getRemainingBuildTime()*self.topSpeed(myUnit.getType()) 
-		    							< myUnit.getPosition().getApproxDistance(u.getPosition())
-		    							&& (followUnit == null || u.getDistance(myUnit) < followUnit.getDistance(myUnit))) {
-		    							
-		    							//move to reavers that are almost done
-										followUnit = u;		    							
-									}	   
-    							} else if(u.getTransport().getID() == myUnit.getID()) {
-    								hasReaver = true;
-    							}
-    						}		    							
-    					}	
-    					if(closestPassenger != null 
-    						&& (!hasReaver || closestPassenger.getPosition().getApproxDistance(myUnit.getPosition()) < 5*32)) {
-    						
-    						myUnit.rightClick(closestPassenger);
-    						gotCommand = true;
-    					} else if(followUnit != null 
-    						&& (!hasReaver || followUnit.getPosition().getApproxDistance(myUnit.getPosition()) < 5*32)) {
-    						
-    						myUnit.move(followUnit.getPosition());
-    						gotCommand = true;
-    					}
-    				} 
-    				if(!gotCommand && self.completedUnitCount(UnitType.Protoss_High_Templar) > 0 
-    					&& myUnit.getSpaceRemaining() >= UnitType.Protoss_High_Templar.spaceRequired()) {
-    				//empty	
-    					closestPassenger = null;
-    					followUnit = null;
-    					for(Unit u: self.getUnits()) {
-    						if(u.getType() == UnitType.Protoss_High_Templar && u.isCompleted() && !u.isLoaded()
-    							&& u.getDistance(myUnit) < self.sightRange(myUnit.getType())) {
-    							
-    							if (u.getSpellCooldown() == 0 && u.getLastCommand().getUnitCommandType() != UnitCommandType.Use_Tech) {		
-    								if(closestPassenger == null || u.getDistance(myUnit) < closestPassenger.getDistance(myUnit)) {
-    									closestPassenger = u;		    							
-    								}
-	    						} else if(followUnit == null || u.getDistance(myUnit) < followUnit.getDistance(myUnit)) {
-									followUnit = u;		    							
-								}	 
-    							
-    						}		    							
-    					}		
-    					if(closestPassenger != null) {
-    						myUnit.rightClick(closestPassenger);
-    						gotCommand = true;
-    					} else if(followUnit != null) {
-    						myUnit.move(followUnit.getPosition());
-    						gotCommand = true;
-    					}
-    				} 
-    				if(!gotCommand && self.completedUnitCount(UnitType.Protoss_Dragoon) > 0 
-    					&& myUnit.getSpaceRemaining() >= UnitType.Protoss_Dragoon.spaceRequired()) {
-    				//empty	
-    					closestPassenger = null;
-    					followUnit = null;
-    					for(Unit u: self.getUnits()) {
-    						if(u.getType() == UnitType.Protoss_Dragoon && u.isCompleted() && !u.isLoaded()) {
-    							if (u.isUnderAttack() && u.getShields() + u.getHitPoints() <= 50) {		
-    								if(closestPassenger == null || u.getDistance(myUnit) < closestPassenger.getDistance(myUnit)) {
-    									closestPassenger = u;		    							
-    								}
-	    						} else if(followUnit == null || u.getDistance(attackPosition) 
-	    							< followUnit.getDistance(attackPosition)) {
-									followUnit = u;		    							
-								}	 
-    							
-    						}		    							
-    					}		
-    					if(closestPassenger != null) {
-    						myUnit.rightClick(closestPassenger);
-    						gotCommand = true;
-    					} else if(followUnit != null) {
-    						myUnit.move(followUnit.getPosition());
-    						gotCommand = true;
-    					}
-    				}
-    				
-    				if(!gotCommand && myUnit.getLoadedUnits().size() == 0) {
-    					myUnit.move(self.getStartLocation().toPosition());
-    					gotCommand = true;
-    				}
-	    			
-	    			if (!gotCommand) {		   			
-		    			if(myUnit.isUnderAttack() || (closestSquishy != null && !closestSquishy.getType().airWeapon().equals(WeaponType.None)
-		    				&& closestSquishy.getDistance(myUnit) <= game.enemy().weaponMaxRange(closestSquishy.getType().airWeapon()) + 20)) {
-		    				
-		    				//safety first
-		    				myUnit.move(self.getStartLocation().toPosition());
-		    				gotCommand = true;
-		    			} else {
-		    				myUnit.move(attackPosition);
-		    				gotCommand = true;
-		    			}
-	    			}	
-	    			//abm	 
-//    				if(myUnit.getVelocityX() == 0 && myUnit.getVelocityY() == 0) {
-//    					myUnit.move(new Position(myUnit.getX() + (int)(12*(Math.random()- 0.5)),myUnit.getY()));
-//    				}		    		    			   			
-	    		} else if(myUnit.getType() == UnitType.Protoss_Observer) {  	
+    		if(myUnit.isCompleted()) {				
+	    		if(myUnit.getType() == UnitType.Protoss_Observer) {  	
 	    			scout(myUnit);
 	    		} else if(myUnit.getType() == UnitType.Protoss_Corsair) {  	    			
 	    			scout(myUnit);
 	    		}
     		}
     	}    	
+    	
+//    	for(int i: myUnits.keySet()) {
+//    		MyUnit myUnit = myUnits.get(i);
+//    		game.drawTextMap(myUnit.getPosition(),myUnit.getUnit().getLastCommand().getUnitCommandType()+"");
+//    	}
     }
     
 //    /** Returns whether a goon can kite a certain unit.
@@ -3158,7 +2931,7 @@ public class GuiBot extends DefaultBWListener {
     	for (Unit myUnit : self.getUnits()) {
             //build buildings at the optimal time
             if (myUnit.getType().isWorker() && !myUnit.isGatheringGas() && !match && myUnit.isCompleted() && !myUnit.equals(scoutingProbe)
-            	&& myUnit.hasPath(buildingLoc.toPosition())) {// &&
+            	&& myUnit.hasPath(buildingLoc.toPosition()) && !myUnit.isStuck()) {// &&
 //            	(game.canBuildHere(buildingLoc, building, myUnit, true) || !game.isVisible(buildingLoc))) {
             	
             	command = myUnit.getLastCommand();            
@@ -3265,5 +3038,6 @@ public class GuiBot extends DefaultBWListener {
     public static void main(String[] args) {
         new GuiBot().run();
     }
+    
 }
 

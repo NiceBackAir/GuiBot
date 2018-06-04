@@ -72,6 +72,7 @@ public class HisUnit extends PositionedObject {
 			}
 		}
 		
+		
 		if(remainingBuildTime == 0)
 			isCompleted = true;
 		remainingBuildTime = Math.max(0, remainingBuildTime-1);
