@@ -30,15 +30,18 @@ public class Dragoon extends MyUnit {
 					if(!(u.getLastCommand().getUnitCommandType() == UnitCommandType.Attack_Unit
 						&& !u.getLastCommand().getTarget().equals(target))) {
 						
-						u.attack(target);
+						u.attack(target, false);
 						gotCommand = true;
 						shotsFired = true;
 					} else {
-//							game.drawTextMap(u.getPosition(),"charging");
+//						game.drawTextMap(u.getPosition(),"charging");
 					}
 				} else {
 					if(attackBuildings) {
-						move(pos);
+						if(pos.getApproxDistance(u.getPosition()) > 48)
+							move(pos);
+						else
+							moveAwayFrom(pos);
 					} else {
 						int myRange = game.self().weaponMaxRange(u.getType().groundWeapon());
 						double hisSpeed = game.enemy().topSpeed(target.getType());
@@ -51,8 +54,8 @@ public class Dragoon extends MyUnit {
 	//						&&	Math.max(myRange - hisRange, u.getDistance(target)) + 8*(u.getType().topSpeed() - hisSpeed) > 0 ) {
 							//kiting behavior
 							moveDownGradient(threatVector());
-							//moveAwayFrom(pos);
-	//						game.drawTextMap(u.getPosition(), ""+u.getGroundWeaponCooldown());
+//							moveAwayFrom(pos);
+//							game.drawTextMap(u.getPosition(), ""+u.getGroundWeaponCooldown());
 						}
 					}
 					if(shotsFired) {
@@ -82,12 +85,12 @@ public class Dragoon extends MyUnit {
 			}
 			move(pos);
 			gotCommand = true;
-//			game.drawTextMap(u.getPosition(),"3");
+			game.drawTextMap(u.getPosition(),"3");
 		} else {
 			if(shotsFired) {
 				isRequestingEvac = true;
 			}
-			game.drawTextMap(u.getPosition(), "busy atk");
+//			game.drawTextMap(u.getPosition(), "busy atk");
 //			game.drawTextMap(u.getPosition(),"4");
 		}
 		

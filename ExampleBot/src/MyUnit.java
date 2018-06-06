@@ -28,6 +28,7 @@ public class MyUnit extends PositionedObject {
 	protected int cancelFrames;
 	protected Position techPosition;
 	protected boolean isRequestingEvac;
+	protected int frameCounter;
 	
 	public static MyUnit createFrom(Unit u, Game game) {
 		if (u == null) {
@@ -49,6 +50,7 @@ public class MyUnit extends PositionedObject {
 		cancelFrames = 0;
 		gotCommand = false;
 		squad = null;
+		frameCounter = 0;
 	}
 
 	@Override
@@ -145,13 +147,25 @@ public class MyUnit extends PositionedObject {
 	public void move(Position pos) throws Exception {
 		target = null;
 		if(!gotCommand) {
-			if(u.getLastCommand().getUnitCommandType() == UnitCommandType.Move 
-				&& (!u.isMoving() || u.isIdle() || !u.isInterruptible() || !u.canMove(true) || u.isStuck() || !u.canCommand() || u.getLastCommand().isQueued())) {
-				//fix the weird stuck unit glitch
-				game.sendText("why");
+			//fix the weird stuck unit glitch
+			if(u.getLastCommand().getUnitCommandType() == UnitCommandType.Move && u.getLastCommand().getTargetPosition().equals(pos) 
+				&& u.getVelocityX() == 0 && u.getVelocityY() == 0) 
+				frameCounter++;
+			else 
+				frameCounter = 0;
+//			if(u.getLastCommand().getUnitCommandType() == UnitCommandType.Move 
+//				&& (!u.isMoving() || u.isIdle() || !u.isInterruptible() || !u.canMove(true) || u.isStuck() || !u.canCommand() || u.getLastCommand().isQueued())) {
+				
+//				game.sendText("why");
+//				u.stop();
+			if(frameCounter > 4) {
 				u.stop();
-			} else
-				u.move(pos);
+				frameCounter = 0;
+				game.sendText("hi");
+			} else {
+				u.move(pos, false);
+				game.drawLineMap(u.getPosition(), pos, Color.Teal);
+			}
 //			else if(u.getLastCommand().getUnitCommandType() != UnitCommandType.Move || u.getLastCommand().getTargetPosition() != pos)
 //			game.drawLineMap(u.getPosition(), pos, Color.Teal);
 		} 

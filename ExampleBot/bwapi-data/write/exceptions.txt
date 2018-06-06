@@ -49934,3 +49934,64 @@ vs Atlas Wing (Terran) on(2)Destination.scx
 156
 vs Velari Tribe (Protoss) on(2)Destination.scx
 156
+vs Mar Sara (Terran) on(3)Tau Cross.scx
+151
+vs Delta Squadron (Terran) on(3)Tau Cross.scx
+vs Delta Squadron (Terran) on(3)Tau Cross.scx
+146
+vs Delta Squadron (Terran) on(3)Tau Cross.scx
+vs Elite Guard (Terran) on(2)Benzene.scx
+152
+vs Mar Sara (Terran) on(2)Benzene.scx
+144
+vs Antiga (Terran) on(2)Benzene.scx
+147
+vs Delta Squadron (Terran) on(2)Benzene.scx
+148
+vs Delta Squadron (Terran) on(2)Benzene.scx
+145
+vs Antiga (Terran) on(2)Benzene.scx
+148
+vs Mar Sara (Terran) on(2)Benzene.scx
+146
+vs Atlas Wing (Terran) on(2)Benzene.scx
+147
+vs Kel-Morian Combine (Terran) on(2)Benzene.scx
+147
+vs Epsilon Squadron (Terran) on(2)Benzene.scx
+145
+vs Elite Guard (Terran) on(2)Benzene.scx
+145
+vs Cronus Wing (Terran) on(2)Benzene.scx
+146
+vs Antiga (Terran) on(2)Benzene.scx
+149
+vs Mar Sara (Terran) on(2)Benzene.scx
+145
+vs Antiga (Terran) on(2)Benzene.scx
+147
+vs Atlas Wing (Terran) on(2)Benzene.scx
+148
+vs Antiga (Terran) on(2)Benzene.scx
+vs Atlas Wing (Terran) on(2)Benzene.scx
+149
+vs Elite Guard (Terran) on(2)Benzene.scx
+148
+vs Delta Squadron (Terran) on(2)Benzene.scx
+149
+vs Cronus Wing (Terran) on(2)Benzene.scx
+145
+vs Delta Squadron (Terran) on(2)Benzene.scx
+166
+vs Atlas Wing (Terran) on(2)Benzene.scx
+153
+vs Elite Guard (Terran) on(2)Benzene.scx
+vs Mar Sara (Terran) on(2)Benzene.scx
+146
+vs Kel-Morian Combine (Terran) on(2)Benzene.scx
+149
+vs Atlas Wing (Terran) on(2)Benzene.scx
+149
+vs Cronus Wing (Terran) on(2)Benzene.scx
+150
+vs Akilae Tribe (Protoss) on(2)Benzene.scx

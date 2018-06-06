@@ -2481,7 +2481,15 @@ public class GuiBot extends DefaultBWListener {
     	
 //    	for(int i: myUnits.keySet()) {
 //    		MyUnit myUnit = myUnits.get(i);
-//    		game.drawTextMap(myUnit.getPosition(),myUnit.getUnit().getLastCommand().getUnitCommandType()+"");
+//    		game.drawTextMap(myUnit.getPosition(),myUnit.getUnit().getLastCommand().getUnitCommandType()+" "+ myUnit.getUnit().getLastCommand().isQueued() + " " + myUnit.getUnit().getLastCommandFrame());
+//    		if(myUnit.getUnit().getLastCommand().getTarget() != null) {
+//    			game.drawLineMap(myUnit.getPosition(),myUnit.getUnit().getLastCommand().getTargetPosition(),Color.Purple);
+//    		}
+//    	}
+//    	for(Unit myUnit: self.getUnits()) {
+//    		if(myUnit.getType().isBuilding()) {
+//        		game.drawTextMap(myUnit.getPosition(),myUnit.getLastCommand().getUnitCommandType()+" "+ myUnit.getLastCommand().isQueued() + " " + myUnit.getLastCommandFrame());
+//    		}
 //    	}
     }
     
@@ -2936,15 +2944,15 @@ public class GuiBot extends DefaultBWListener {
             	
             	command = myUnit.getLastCommand();            
             	dist = myUnit.getPosition().getApproxDistance(buildingLoc.toPosition());
-            	if(myUnit.getTargetPosition().equals(buildingCenter)) {
+            	if((command.getUnitCommandType() == UnitCommandType.Build)
+            		|| (command.getUnitCommandType()  == UnitCommandType.Move && command.getTargetPosition().equals(buildingCenter))) {
             		//prevent multiple workers from building the same thing
             		closestWorker = myUnit;
             		shortestDist = dist;
             		match = true;
             	} else if (myUnit.getType().isWorker() && !myUnit.isGatheringGas() && myUnit.isCompleted() && !myUnit.equals(scoutingProbe)) {// &&
 	//            	(game.canBuildHere(buildingLoc, building, myUnit, true) || !game.isVisible(buildingLoc))) {
-	            	
-	            	command = myUnit.getLastCommand();            
+	            	         
 	            	dist = myUnit.getPosition().getApproxDistance(buildingLoc.toPosition());
 	            	if (dist < shortestDist) {
 	            		closestWorker = myUnit;
