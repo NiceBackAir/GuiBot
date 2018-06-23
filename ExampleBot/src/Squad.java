@@ -121,7 +121,7 @@ public class Squad {
 		if(isStaged(objective, range) || units.size() == 1 || attackBuildings) {// && objective.getApproxDistance(center) < 11*32)) {
 			while(itr.hasNext()) {
 				myUnit = itr.next();
-				if(myUnit.getUnit().exists()) {
+				if(myUnit.getUnit().exists() && !myUnit.getUnit().isLoaded()) {
 					myUnit.attack(objective, attackBuildings);
 					if(attackBuildings)
 						game.drawCircleMap(myUnit.getPosition(), 16, Color.Orange);
@@ -175,9 +175,9 @@ public class Squad {
 		center = findCenter();
 		while(itr.hasNext()) {
 			myUnit = itr.next();
-			if(myUnit.getUnit().exists()) {
+			if(myUnit.getUnit().exists() && !myUnit.getUnit().isLoaded()) {
 				d = myUnit.getPosition().getApproxDistance(pos);
-				if(d >= range + 6*32) {
+				if(d >= range + 5*32) {
 					myUnit.move(pos);
 				} else if(myUnit.getTarget(false) != null) {
 					if(myUnit.threatLevel() <= 3.0) {

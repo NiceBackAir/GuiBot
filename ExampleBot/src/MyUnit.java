@@ -161,10 +161,10 @@ public class MyUnit extends PositionedObject {
 			if(frameCounter > 4) {
 				u.stop();
 				frameCounter = 0;
-				game.sendText("hi");
+//				game.sendText("hi");
 			} else {
 				u.move(pos, false);
-				game.drawLineMap(u.getPosition(), pos, Color.Teal);
+//				game.drawLineMap(u.getPosition(), pos, Color.Teal);
 			}
 //			else if(u.getLastCommand().getUnitCommandType() != UnitCommandType.Move || u.getLastCommand().getTargetPosition() != pos)
 //			game.drawLineMap(u.getPosition(), pos, Color.Teal);

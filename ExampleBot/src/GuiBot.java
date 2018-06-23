@@ -321,6 +321,7 @@ public class GuiBot extends DefaultBWListener {
 		        		myUnits.put(unit.getID(), u);
 		    		} else if(unit.getType() == UnitType.Protoss_Reaver) {
 		    			Reaver u = new Reaver(unit, game);
+		    			freeAgents.add(u);
 		        		myUnits.put(unit.getID(), u);
 		    		}
 		    	}
@@ -713,7 +714,7 @@ public class GuiBot extends DefaultBWListener {
         			
     			defenseChoke = lateGameChoke;    			
     		} else if(naturalChoke != null && (self.allUnitCount(UnitType.Protoss_Nexus) >= 2
-            	|| (self.allUnitCount(UnitType.Protoss_Nexus) == 1 && nextItem == UnitType.Protoss_Nexus))) {
+            	|| (self.allUnitCount(UnitType.Protoss_Nexus) == 1 && nextItem == UnitType.Protoss_Nexus) && canAfford(UnitType.Protoss_Nexus))) {
     			defenseChoke = naturalChoke;
     		} else if(mainChoke != null) {
     			defenseChoke = mainChoke;
@@ -1280,21 +1281,30 @@ public class GuiBot extends DefaultBWListener {
         for (Unit myUnit : self.getUnits()) {
             if (myUnit.getType() == UnitType.Protoss_Robotics_Facility && myUnit.isCompleted()) {
             	if(myUnit.isTraining()) {
+            	//first round robo units
+            	} else if(self.allUnitCount(UnitType.Protoss_Observer) == 0) {
+            		if(self.allUnitCount(UnitType.Protoss_Observatory) > 0) {
+            			prepareUnit(myUnit, UnitType.Protoss_Observer);
+            		}            		
+            	} else if(self.allUnitCount(UnitType.Protoss_Shuttle) == 0 && enemyRace != Race.Protoss) {
+            		prepareUnit(myUnit, UnitType.Protoss_Shuttle);
+            	} else if(self.allUnitCount(UnitType.Protoss_Reaver) == 0) {
+            		if(self.allUnitCount(UnitType.Protoss_Robotics_Support_Bay) > 0) {
+            			prepareUnit(myUnit, UnitType.Protoss_Reaver);
+            		}                	
             	} else if(self.allUnitCount(UnitType.Protoss_Shuttle) == 0) {
             		prepareUnit(myUnit, UnitType.Protoss_Shuttle);
-            	} else if(self.allUnitCount(UnitType.Protoss_Observatory) > 0 && self.allUnitCount(UnitType.Protoss_Observer) == 0
-            		&& enemyRace!= Race.Zerg) {
+            	//second round robo units
+            	} else if(self.allUnitCount(UnitType.Protoss_Observatory) > 0 && self.allUnitCount(UnitType.Protoss_Observer) < 2) {
             		prepareUnit(myUnit, UnitType.Protoss_Observer);
-            	} else if(self.allUnitCount(UnitType.Protoss_Robotics_Support_Bay) > 0 && self.allUnitCount(UnitType.Protoss_Reaver) == 0) {
-                	prepareUnit(myUnit, UnitType.Protoss_Reaver);
-            	} else if(self.allUnitCount(UnitType.Protoss_Observatory) > 0 && self.completedUnitCount(UnitType.Protoss_Reaver) > 0 
-            		&& self.allUnitCount(UnitType.Protoss_Observer) < 5) {
-            		
-            		prepareUnit(myUnit, UnitType.Protoss_Observer);
-            	} else if(self.allUnitCount(UnitType.Protoss_Robotics_Support_Bay) > 0 && self.allUnitCount(UnitType.Protoss_Shuttle) < 2) {
+            	} else if(self.allUnitCount(UnitType.Protoss_Shuttle) < 2 && enemyRace != Race.Protoss) {
                 	prepareUnit(myUnit, UnitType.Protoss_Shuttle);
             	} else if(self.allUnitCount(UnitType.Protoss_Robotics_Support_Bay) > 0 && self.allUnitCount(UnitType.Protoss_Reaver) < 2) {
                 	prepareUnit(myUnit, UnitType.Protoss_Reaver);
+             	} else if(self.allUnitCount(UnitType.Protoss_Shuttle) < 2) {
+                	prepareUnit(myUnit, UnitType.Protoss_Shuttle);
+            	} else if(self.allUnitCount(UnitType.Protoss_Observatory) > 0 && self.allUnitCount(UnitType.Protoss_Observer) < 5) {
+            		prepareUnit(myUnit, UnitType.Protoss_Observer);
             	}
             }     
         }
@@ -2718,7 +2728,7 @@ public class GuiBot extends DefaultBWListener {
 		    		//build a building close to nexus
 			    	for(int x = baseTile.getX() - 41; x <= baseTile.getX() + 43; x += 5) {
 			        	for(int y = baseTile.getY() - 49; y <= baseTile.getY() + 45; y += 6) {	 
-			        		if(!(Math.abs(x-baseTile.getX()) <= 4 && Math.abs(y-baseTile.getY()) <= 3)) {
+			        		if(!(Math.abs(x-baseTile.getX()) <= 10 && Math.abs(y-baseTile.getY()) <= 7)) {
 				        		nextTile = new TilePosition(x,y);
 				        		nextPosition = nextTile.toPosition();
 				        		buildingCenter = new Position(nextTile.toPosition().getX() + nextItem.tileWidth()*16

@@ -85,7 +85,7 @@ public class Dragoon extends MyUnit {
 			}
 			move(pos);
 			gotCommand = true;
-			game.drawTextMap(u.getPosition(),"3");
+//			game.drawTextMap(u.getPosition(),"3");
 		} else {
 			if(shotsFired) {
 				isRequestingEvac = true;
