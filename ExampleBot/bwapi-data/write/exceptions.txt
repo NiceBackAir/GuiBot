@@ -50061,3 +50061,1338 @@ vs Akilae Tribe (Protoss) on(3)Tau Cross.scx
 vs Akilae Tribe (Protoss) on(3)Tau Cross.scx
 151
 vs Akilae Tribe (Protoss) on(3)Tau Cross.scx
+vs Sargas Tribe (Protoss) on(4)Circuit Breaker.scx
+154
+vs Akilae Tribe (Protoss) on(4)Circuit Breaker.scx
+153
+vs Akilae Tribe (Protoss) on(4)Circuit Breaker.scx
+153
+163
+158
+159
+165
+156
+156
+163
+160
+165
+156
+162
+158
+162
+157
+161
+153
+164
+87
+87
+vs Furinax Tribe (Protoss) on(2)Benzene.scx
+164
+230
+229
+230
+228
+227
+225
+226
+229
+230
+118
+115
+115
+115
+115
+123
+117
+118
+139
+125
+115
+118
+176
+171
+174
+174
+171
+172
+168
+175
+175
+116
+117
+119
+121
+115
+115
+114
+117
+119
+118
+119
+121
+118
+118
+116
+118
+117
+119
+118
+121
+118
+117
+118
+118
+117
+116
+118
+116
+119
+118
+117
+119
+121
+118
+119
+118
+120
+118
+vs Ara Tribe (Protoss) on(2)Benzene.scx
+158
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+vs Auriga Tribe (Protoss) on(2)Benzene.scx
+151
+vs Ara Tribe (Protoss) on(3)Neo Moon Glaive.scx
+152
+vs Akilae Tribe (Protoss) on(3)Neo Moon Glaive.scx
+158
+vs Velari Tribe (Protoss) on(3)Neo Moon Glaive.scx
+159
+178
+122
+125
+vs Sargas Tribe (Protoss) on(3)Neo Moon Glaive.scx
+vs Velari Tribe (Protoss) on(3)Neo Moon Glaive.scx
+162
+vs Velari Tribe (Protoss) on(3)Neo Moon Glaive.scx
+vs Sargas Tribe (Protoss) on(3)Neo Moon Glaive.scx
+150
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+null
+vs Sargas Tribe (Protoss) on(3)Neo Moon Glaive.scx
+160
+vs Akilae Tribe (Protoss) on(3)Neo Moon Glaive.scx
+152
+vs Velari Tribe (Protoss) on(3)Neo Moon Glaive.scx
+155
+vs Akilae Tribe (Protoss) on(3)Neo Moon Glaive.scx
+vs Furinax Tribe (Protoss) on(3)Neo Moon Glaive.scx
+152
+vs Garm Brood (Zerg) on(3)Neo Moon Glaive.scx
+vs Epsilon Squadron (Terran) on(3)Neo Moon Glaive.scx
+159
+vs Akilae Tribe (Protoss) on(3)Neo Moon Glaive.scx
+vs Baelrog Brood (Zerg) on(3)Neo Moon Glaive.scx
+151
+85
+102
+87
+87
+94
+85
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+/ by zero
+vs Surtur Brood (Zerg) on(3)Neo Moon Glaive.scx
+163
+vs Grendel Brood (Zerg) on(3)Neo Moon Glaive.scx
+150
+vs Velari Tribe (Protoss) on(3)Neo Moon Glaive.scx
+152
+vs Grendel Brood (Zerg) on(3)Neo Moon Glaive.scx
+235
+236
+127
+129
+130
+127
+183
+183
+129
+132
+129
+128
+126
+128
+128
+141
+87
+89
+142
+vs Garm Brood (Zerg) on(3)Neo Moon Glaive.scx
+143
+vs Jormungand Brood (Zerg) on(3)Neo Moon Glaive.scx
+142
+vs Baelrog Brood (Zerg) on(3)Neo Moon Glaive.scx
+144
+vs Garm Brood (Zerg) on(3)Neo Moon Glaive.scx
+149
+vs Grendel Brood (Zerg) on(3)Neo Moon Glaive.scx
+148
+vs Grendel Brood (Zerg) on(3)Neo Moon Glaive.scx
+154
+vs Tiamat Brood (Zerg) on(3)Neo Moon Glaive.scx
+vs Garm Brood (Zerg) on(3)Neo Moon Glaive.scx
+158
+vs Leviathan Brood (Zerg) on(3)Neo Moon Glaive.scx
+vs Leviathan Brood (Zerg) on(3)Neo Moon Glaive.scx
+147
+vs Jormungand Brood (Zerg) on(3)Neo Moon Glaive.scx
+vs Baelrog Brood (Zerg) on(3)Neo Moon Glaive.scx
+vs Grendel Brood (Zerg) on(3)Neo Moon Glaive.scx
+vs Grendel Brood (Zerg) on(3)Neo Moon Glaive.scx
+vs Surtur Brood (Zerg) on(3)Tau Cross.scx
+vs Surtur Brood (Zerg) on(2)Destination.scx
+vs Garm Brood (Zerg) on(2)Destination.scx
+vs Fenris Brood (Zerg) on(2)Destination.scx
+vs Surtur Brood (Zerg) on(2)Destination.scx
+vs Grendel Brood (Zerg) on(2)Destination.scx
+vs Surtur Brood (Zerg) on(4)Fighting Spirit.scx
+vs Leviathan Brood (Zerg) on(4)Python.scx
+vs Delta Squadron (Terran) on(4)Python.scx
+406
+402
+407
+402
+406
+405
+404
+406
+404
+405
+402
+404
+273
+275
+404
+405
+403
+403
+403
+410
+537
+538
+413
+412
+412
+276
+vs Delta Squadron (Terran) on(4)Icarus.scm
+154
+127
+127
+125
+127
+130
+vs Kel-Morian Combine (Terran) on(4)Icarus.scm
+vs Shelak Tribe (Protoss) on(4)Icarus.scm
+vs Elite Guard (Terran) on(4)Icarus.scm
+153
+vs Furinax Tribe (Unknown) on(4)Icarus.scm
+vs Sargas Tribe (Protoss) on(4)Icarus.scm
+111
+111
+111
+110
+110
+vs Sargas Tribe (Protoss) on(4)Icarus.scm
+1003
+1005
+1007
+999
+1016
+1019
+1010
+1004
+999
+1005
+1001
+996
+1026
+1030
+1002
+997
+995
+990
+994
+1007
+1054
+993
+664
+665
+664
+666
+665
+672
+774
+785
+776
+781
+1004
+1005
+999
+889
+885
+888
+890
+884
+883
+883
+879
+885
+884
+883
+882
+94
+88
+92
+vs Velari Tribe (Protoss) on(4)Icarus.scm
+127
+128
+243
+248
+246
+133
+127
+133
+138
+128
+127
+129
+132
+127
+258
+130
+129
+128
+129
+133
+131
+128
+130
+vs Kel-Morian Combine (Terran) on(4)Icarus.scm
+153
+vs Kel-Morian Combine (Terran) on(4)Icarus.scm
+144
+vs Mar Sara (Terran) on(4)Icarus.scm
+vs Cronus Wing (Terran) on(4)Icarus.scm
+115
+115
+115
+117
+116
+116
+vs Elite Guard (Terran) on(4)Icarus.scm
+vs Mar Sara (Terran) on(4)Icarus.scm
+vs Epsilon Squadron (Terran) on(4)Icarus.scm
+vs Mar Sara (Terran) on(4)Fighting Spirit.scx
+158
+vs Cronus Wing (Terran) on(4)Fighting Spirit.scx
+144
+vs Antiga (Terran) on(4)Fighting Spirit.scx
+166
+vs Epsilon Squadron (Terran) on(4)Fighting Spirit.scx
+144
+vs Cronus Wing (Terran) on(4)Fighting Spirit.scx
+vs Elite Guard (Terran) on(4)Fighting Spirit.scx
+144
+vs Antiga (Terran) on(4)Fighting Spirit.scx
+vs Kel-Morian Combine (Terran) on(4)Empire of the Sun.scm
+144
+vs Mar Sara (Terran) on(4)Empire of the Sun.scm
+143
+vs Cronus Wing (Terran) on(4)Empire of the Sun.scm
+145
+vs Atlas Wing (Terran) on(4)Empire of the Sun.scm
+144
+vs Antiga (Terran) on(4)Empire of the Sun.scm
+144
+vs Delta Squadron (Terran) on(4)Empire of the Sun.scm
+145
+vs Jormungand Brood (Zerg) on(4)Empire of the Sun.scm
+vs Antiga (Terran) on(4)Empire of the Sun.scm
+150
+138
+139
+142
+141
+140
+140
+141
+141
+139
+139
+140
+139
+143
+143
+141
+140
+139
+140
+139
+139
+140
+142
+139
+145
+141
+147
+140
+142
+143
+138
+140
+142
+140
+141
+vs Leviathan Brood (Zerg) on(4)Circuit Breaker.scx
+265
+263
+264
+263
+264
+264
+381
+385
+382
+384
+384
+382
+382
+260
+152
+406
+vs Cronus Wing (Terran) on(4)Circuit Breaker.scx
+162
+vs Atlas Wing (Terran) on(4)Circuit Breaker.scx
+145
+256
+255
+256
+255
+255
+257
+257
+256
+256
+622
+621
+628
+619
+626
+623
+135
+135
+190
+136
+135
+137
+137
+135
+137
+139
+137
+136
+136
+137
+138
+137
+144
+136
+137
+137
+135
+136
+139
+135
+136
+136
+135
+136
+140
+138
+136
+200
+200
+200
+140
+139
+142
+140
+141
+141
+141
+139
+139
+139
+146
+200
+vs Delta Squadron (Terran) on(4)Circuit Breaker.scx
+151
+145
+148
+148
+147
+148
+149
+144
+147
+147
+146
+151
+146
+146
+148
+145
+146
+150
+146
+146
+288
+290
+286
+286
+288
+286
+284
+286
+286
+282
+284
+286
+147
+146
+146
+144
+146
+145
+143
+144
+145
+147
+147
+150
+144
+144
+146
+145
+152
+145
+148
+145
+142
+146
+145
+275
+219
+277
+409
+144
+414
+415
+408
+411
+561
+85
+157
+159
+161
+158
+157
+180
+155
+159
+159
+162
+155
+155
+367
+292
+297
+160
+157
+155
+156
+154
+289
+157
+156
+287
+289
+287
+287
+289
+287
+287
+87
+91
+91
+89
+86
+86
+87
+88
+85
+85
+85
+85
+88
+87
+85
+86
+86
+85
+85
+85
+86
+86
+85
+86
+87
+90
+86
+90

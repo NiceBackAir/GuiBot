@@ -75,8 +75,10 @@ public class Reaver extends MyUnit {
 					
 					if(BWTA.getRegion(u.getPosition()) == BWTA.getRegion(hisUnit.getPosition()))
 						groundDistance = hisUnit.getDistance(u);
-					else
+					else if(closestEnemy == null || BWTA.getRegion(u.getPosition()) != BWTA.getRegion(closestEnemy.getPosition()))
 						groundDistance = BWTA.getGroundDistance(hisUnit.getTilePosition(), u.getTilePosition()) - 32;
+					else
+						groundDistance = 9999;
 					
 					if (groundDistance < range && groundDistance >= 0) {
 						if(closestEnemy == null || groundDistance < closestGroundDistance) {

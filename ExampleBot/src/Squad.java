@@ -18,6 +18,7 @@ public class Squad {
 	private ArrayList<MyUnit> units;
 	private UnitState command;
 	private Position objective;
+	private double powerAtObjective;
 	private int radius;
 	private BaseLocation base;
 	private Game game;
@@ -121,14 +122,14 @@ public class Squad {
 		if(isStaged(objective, range) || units.size() == 1 || attackBuildings) {// && objective.getApproxDistance(center) < 11*32)) {
 			while(itr.hasNext()) {
 				myUnit = itr.next();
-				if(myUnit.getUnit().exists() && !myUnit.getUnit().isLoaded()) {
+				if(!myUnit.getUnit().exists()) {
+					itr.remove();
+				} else if(!myUnit.getUnit().isLoaded()) {
 					myUnit.attack(objective, attackBuildings);
 					if(attackBuildings)
 						game.drawCircleMap(myUnit.getPosition(), 16, Color.Orange);
 					else
 						game.drawCircleMap(myUnit.getPosition(), 16, Color.Green);
-				} else {
-					itr.remove();
 				}
 			}
 		} else {
@@ -167,6 +168,7 @@ public class Squad {
 	}
 	
 	public void contain(Position pos, int range) throws Exception {
+		powerAtObjective = findPower(pos);
 		command = UnitState.CONTAINING;
 		objective = pos;
 		Iterator<MyUnit> itr = units.iterator();
@@ -175,28 +177,55 @@ public class Squad {
 		center = findCenter();
 		while(itr.hasNext()) {
 			myUnit = itr.next();
-			if(myUnit.getUnit().exists() && !myUnit.getUnit().isLoaded()) {
+			if(!myUnit.getUnit().exists()) {
+				itr.remove();
+			} else if(!myUnit.getUnit().isLoaded()) {
 				d = myUnit.getPosition().getApproxDistance(pos);
 				if(d >= range + 5*32) {
 					myUnit.move(pos);
 				} else if(myUnit.getTarget(false) != null) {
-					if(myUnit.threatLevel() <= 3.0) {
+					if(myUnit.threatLevel() <= powerAtObjective) {
+//						myUnit.attack(objective, false);
 						myUnit.kiteBack(game.self().getStartLocation().toPosition());
 						game.drawTextMap(myUnit.getPosition(),"  fite");
 					} else {
-						myUnit.move(game.self().getStartLocation().toPosition());
+						myUnit.moveAwayFrom(pos);
+						//myUnit.move(game.self().getStartLocation().toPosition());
 						game.drawTextMap(myUnit.getPosition(),"run");
 					}
-				} else if(d >= range)
+				} else if(d >= range+16) {
 					myUnit.surround(pos, center, range);
-				else
+				} else if(d >= range) {
+					myUnit.getUnit().stop();
+				} else
 					myUnit.moveAwayFrom(pos);
 				game.drawCircleMap(myUnit.getPosition(), 16, Color.Blue);
-			} else {
-				itr.remove();
 			}
 		}
 	}
+	
+	public double findPower(Position pos) {
+		Iterator<MyUnit> itr = units.iterator();
+		MyUnit myUnit;
+		double power = 0;
+		while(itr.hasNext()) {
+			myUnit = itr.next();
+			if(!myUnit.getUnit().exists()) {
+				itr.remove();
+			} else {
+				double d = myUnit.getPosition().getApproxDistance(pos);
+				int range = Math.max(myUnit.getUnit().getType().seekRange(), 
+						game.self().weaponMaxRange(myUnit.getUnit().getType().groundWeapon()) + 32);
+				
+				if(range == 0 || !myUnit.getUnit().getType().canAttack()) {
+					range = myUnit.getUnit().getType().sightRange();
+				}
+				power += 2*myUnit.getUnit().getType().supplyRequired()*range/d;
+			}
+		}
+		return power;
+	}
+	
 	public void resumeMining() {
 		command = UnitState.MINING;
 		UnitCommandType command = null;
@@ -215,7 +244,9 @@ public class Squad {
 		center = findCenter();
 		while(itr.hasNext()) {
 			myUnit = itr.next();
-			if(myUnit.getUnit().exists()) {
+			if(!myUnit.getUnit().exists()) {
+				itr.remove();
+			} else if(!myUnit.getUnit().isLoaded()) {
 				if(myUnit.getPosition().getApproxDistance(center) >= 10*32-16
 					&& myUnit.getUnit().hasPath(center)) {
 //					&& GuiBot.walkMap[center.toTilePosition().getX()][center.toTilePosition().getY()] <= 0) {
@@ -224,8 +255,6 @@ public class Squad {
 					myUnit.move(objective);
 				}
 				game.drawCircleMap(myUnit.getPosition(),16, Color.White);
-			} else {
-				itr.remove();
 			}
 		}
 	}

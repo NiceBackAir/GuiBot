@@ -6,6 +6,7 @@ import bwta.BaseLocation;
 
 public class HisBase {
 	private ArrayList<HisUnit> turrets;
+	private ArrayList<HisUnit> defenders;
 	private Game game;
 	private int patchCount;
 	private int workerCount;
@@ -14,6 +15,7 @@ public class HisBase {
 	public HisBase(Game game, BaseLocation baseLoc) {
 		base = baseLoc;
 		turrets = new ArrayList<HisUnit>();
+		defenders = new ArrayList<HisUnit>();
 		patchCount = 0;
 		workerCount = 0;
 	}
@@ -30,12 +32,31 @@ public class HisBase {
 		}
 	}
 	
+	public void addDefender(HisUnit hisUnit) {
+		if(!defenders.contains(hisUnit)) {
+			defenders.add(hisUnit);
+		}
+	}
+	
 	public void clearTurrets() {
 		turrets.clear();
 	}
 	
 	public ArrayList<HisUnit> getTurrets() {
 		return turrets;
+	}
+	
+	public ArrayList<HisUnit> getDefenders() {
+		return defenders;
+	}
+	
+	public int getDefenderSupply() {
+		int supply = 0;
+		for(HisUnit u: defenders) {
+			supply += u.getUnit().getType().supplyRequired();
+		}
+		
+		return supply;
 	}
 	
 	public Position getPosition() {

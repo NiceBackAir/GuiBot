@@ -127,8 +127,8 @@ public class Shuttle extends MyUnit {
 				
 				if (!hisUnit.getType().airWeapon().equals(WeaponType.None)) {
 					hisRange = game.enemy().weaponMaxRange(hisUnit.getType().airWeapon()) + 16 + hisSize + mySize;
-    				threatVector[0] += -3*scale*hisRange/d/d*(hisUnit.getX()-u.getX());
-					threatVector[1] += -3*scale*hisRange/d/d*(hisUnit.getY()-u.getY());
+    				threatVector[0] += -2.5*scale*hisRange/d/d*(hisUnit.getX()-u.getX());
+					threatVector[1] += -2.5*scale*hisRange/d/d*(hisUnit.getY()-u.getY());
 				} else if(u.getLoadedUnits().size() > 0 
 					&& (!hisUnit.getType().groundWeapon().equals(WeaponType.None) && !hisUnit.getType().isWorker())
 					|| hisUnit.getType() == UnitType.Terran_Bunker) {		    

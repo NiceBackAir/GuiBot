@@ -334,6 +334,7 @@ public class MyUnit extends PositionedObject {
     }
 	
 	public void blockChoke(Chokepoint choke) throws Exception {
+		state = UnitState.HOLDING;
 		target = getTarget(false);
 //		if(u.isStuck()) 
 //			game.sendText("stuck");	
@@ -427,8 +428,10 @@ public class MyUnit extends PositionedObject {
 				
 				if (!hisUnit.getType().groundWeapon().equals(WeaponType.None)) {
 					hisRange = game.enemy().weaponMaxRange(hisUnit.getType().groundWeapon()) + 16 + hisSize + mySize;
-					threatLevel += 2*hisRange/d;
-				} 
+					threatLevel += 2*hisUnit.getType().supplyRequired()*hisRange/d;
+				} else if(hisUnit.getType().isSpellcaster()) {
+					threatLevel += 1*hisUnit.getType().supplyRequired()*hisUnit.getType().sightRange()/d;
+				}
 			}
 		}	
 		
@@ -444,7 +447,7 @@ public class MyUnit extends PositionedObject {
 					
 					if (d < 17*32 && !hisTurret.getType().groundWeapon().equals(WeaponType.None)) {
 						hisRange = game.enemy().weaponMaxRange(hisTurret.getType().groundWeapon()) + 16 + hisSize + mySize;
-						threatLevel += 2*hisRange/d;
+						threatLevel += 6*hisRange/d;
 					} 
 				}
 			}
@@ -470,7 +473,7 @@ public class MyUnit extends PositionedObject {
 						&& (!hisUnit.isFlying() || u.getType().airWeapon() != WeaponType.None)) {
 						
 						int damage = Math.max(1, game.getDamageTo(hisUnit.getType(), u.getType(), game.enemy(), game.self()));
-						hitsToKill = hisUnit.getHitPoints()/damage + hisUnit.getShields()/u.getType().groundWeapon().damageAmount();
+						hitsToKill = hisUnit.getHitPoints()/damage + hisUnit.getShields()/Math.max(1, u.getType().groundWeapon().damageAmount());
 						//high ground advantage
 						if(game.getGroundHeight(hisUnit.getTilePosition()) > game.getGroundHeight(u.getTilePosition()))
 							hitsToKill *=2;
